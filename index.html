@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mein Klausur-Countdown</title>
+
+  <style>
+    /* ===== Farben und Grundwerte ===== */
+    :root {
+      --hintergrund: #f2f4f8;
+      --karte: #ffffff;
+      --text: #1d2433;
+      --text-leise: #6b7385;
+      --akzent: #4f46e5;
+      --akzent-hell: #eef0ff;
+      --rand: #e3e6ee;
+      --vorbei: #9aa1b1;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --hintergrund: #12151c;
+        --karte: #1c212b;
+        --text: #eef1f6;
+        --text-leise: #9aa3b5;
+        --akzent: #818cf8;
+        --akzent-hell: #262b45;
+        --rand: #2c3340;
+        --vorbei: #5e6575;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--hintergrund);
+      color: var(--text);
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+    }
+
+    /* ===== Kopfbereich ===== */
+    header { margin-bottom: 32px; }
+
+    h1 {
+      font-size: 2.4rem;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .heute {
+      color: var(--text-leise);
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    /* ===== Liste der Klausuren ===== */
+    .liste {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 16px;
+    }
+
+    .klausur {
+      background: var(--karte);
+      border: 1px solid var(--rand);
+      border-radius: 18px;
+      padding: 22px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .name {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+
+    .datum {
+      color: var(--text-leise);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    .countdown {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .tage {
+      display: block;
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .einheit {
+      color: var(--text-leise);
+      font-size: 0.95rem;
+    }
+
+    /* ===== Hervorhebung: nächste Klausur ===== */
+    .klausur.naechste {
+      background: var(--akzent-hell);
+      border: 2px solid var(--akzent);
+      padding: 30px 26px;
+    }
+
+    .klausur.naechste .tage {
+      color: var(--akzent);
+      font-size: 3.4rem;
+    }
+
+    .klausur.naechste .name { font-size: 1.7rem; }
+
+    .badge {
+      display: inline-block;
+      background: var(--akzent);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    /* ===== Bereits vergangene Klausuren ===== */
+    .klausur.vorbei { opacity: 0.6; }
+    .klausur.vorbei .tage { color: var(--vorbei); font-size: 1.4rem; }
+
+    /* ===== Kleine Bildschirme (Handy) ===== */
+    @media (max-width: 480px) {
+      h1 { font-size: 1.9rem; }
+      .klausur { padding: 18px; }
+      .name { font-size: 1.2rem; }
+      .tage { font-size: 2.1rem; }
+      .klausur.naechste .tage { font-size: 2.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Mein Klausur-Countdown</h1>
+      <p class="heute" id="heute"></p>
+    </header>
+
+    <!-- Hier werden die Klausuren per JavaScript eingefügt -->
+    <ul class="liste" id="liste"></ul>
+  </main>
+
+  <script>
+    // ===== 1. Deine Klausuren =====
+    // Neue Klausur hinzufügen: einfach eine Zeile kopieren und anpassen.
+    // Datum im Format "JJJJ-MM-TT" (Jahr-Monat-Tag).
+    const klausuren = [
+      { name: "Mathematik 1",        datum: "2027-02-10" },
+      { name: "BWL Grundlagen",      datum: "2027-02-17" },
+      { name: "Technische Mechanik", datum: "2027-02-24" },
+    ];
+
+    // ===== 2. Hilfsfunktionen =====
+
+    // Macht aus "2027-02-10" ein Datum um 0 Uhr (lokale Zeit).
+    function zuDatum(text) {
+      const [jahr, monat, tag] = text.split("-").map(Number);
+      return new Date(jahr, monat - 1, tag);
+    }
+
+    // Heutiges Datum um 0 Uhr, damit nur ganze Tage gezählt werden.
+    function heuteUmMitternacht() {
+      const jetzt = new Date();
+      return new Date(jetzt.getFullYear(), jetzt.getMonth(), jetzt.getDate());
+    }
+
+    // Anzahl Tage zwischen heute und dem Klausurdatum.
+    function tageBis(datum) {
+      const msProTag = 1000 * 60 * 60 * 24;
+      return Math.round((datum - heuteUmMitternacht()) / msProTag);
+    }
+
+    // Schönes deutsches Datum, z. B. "Mittwoch, 10. Februar 2027".
+    function formatieren(datum) {
+      return datum.toLocaleDateString("de-DE", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      });
+    }
+
+    // ===== 3. Seite aufbauen =====
+    function anzeigen() {
+      document.getElementById("heute").textContent =
+        "Heute ist " + formatieren(heuteUmMitternacht());
+
+      // Klausuren nach Datum sortieren und Resttage berechnen
+      const liste = klausuren
+        .map(k => {
+          const datum = zuDatum(k.datum);
+          return { name: k.name, datum: datum, tage: tageBis(datum) };
+        })
+        .sort((a, b) => a.datum - b.datum);
+
+      // Die nächste Klausur = die erste, die heute oder später ist
+      const naechste = liste.find(k => k.tage >= 0);
+
+      const ul = document.getElementById("liste");
+      ul.innerHTML = "";
+
+      liste.forEach(k => {
+        const li = document.createElement("li");
+        li.className = "klausur";
+
+        let zahl, einheit;
+        if (k.tage > 1)        { zahl = k.tage; einheit = "Tage"; }
+        else if (k.tage === 1) { zahl = 1;      einheit = "Tag"; }
+        else if (k.tage === 0) { zahl = "Heute"; einheit = "Viel Erfolg!"; }
+        else                   { zahl = "Vorbei"; einheit = ""; li.classList.add("vorbei"); }
+
+        if (k === naechste) li.classList.add("naechste");
+
+        li.innerHTML = `
+          <div>
+            ${k === naechste ? '<span class="badge">Nächste Klausur</span>' : ""}
+            <p class="name"></p>
+            <p class="datum">${formatieren(k.datum)}</p>
+          </div>
+          <div class="countdown">
+            <span class="tage">${zahl}</span>
+            <span class="einheit">${einheit}</span>
+          </div>
+        `;
+        li.querySelector(".name").textContent = k.name;
+        ul.appendChild(li);
+      });
+    }
+
+    anzeigen();
+    // Um Mitternacht soll sich die Anzeige von selbst aktualisieren
+    setInterval(anzeigen, 60 * 1000);
+  </script>
+</body>
+</html>
