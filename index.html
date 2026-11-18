@@ -23,8 +23,11 @@
       --gefahr: #dc2626;
       --gefahr-hell: #fdecec;
       --erfolg: #16a34a;
+      --warnung: #b45309;
+      --warnung-hell: #fef3c7;
       --balken-leer: #e3e6ee;
       --schatten: 0 10px 30px rgba(20, 25, 40, 0.18);
+      --tableiste: 72px;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -40,6 +43,8 @@
         --gefahr: #f87171;
         --gefahr-hell: #3a2023;
         --erfolg: #4ade80;
+        --warnung: #fbbf24;
+        --warnung-hell: #3a2f14;
         --balken-leer: #2c3340;
         --schatten: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
@@ -61,12 +66,12 @@
     main {
       max-width: 760px;
       margin: 0 auto;
-      /* unten extra Platz, damit der +-Button keine Karte verdeckt */
-      padding: 48px 20px 140px;
+      /* unten extra Platz für Tab-Leiste und +-Button */
+      padding: 48px 20px calc(var(--tableiste) + 120px + env(safe-area-inset-bottom));
     }
 
     /* ===== Kopfbereich ===== */
-    header { margin-bottom: 32px; }
+    header { margin-bottom: 28px; }
 
     h1 {
       font-size: 2.4rem;
@@ -85,6 +90,52 @@
       color: var(--text-leise);
       font-size: 0.95rem;
       margin: 8px 0 0;
+    }
+
+    h2.abschnitt {
+      font-size: 1.3rem;
+      margin: 32px 0 12px;
+    }
+
+    /* ===== Tab-Leiste unten ===== */
+    .tabs {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      background: var(--karte);
+      border-top: 1px solid var(--rand);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .tabs a {
+      flex: 1;
+      max-width: 220px;
+      min-height: var(--tableiste);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-leise);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .tabs a.aktiv { color: var(--akzent); }
+    .tabs a:active { background: var(--hintergrund); }
+
+    .tabs svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* ===== Liste der Klausuren ===== */
@@ -226,7 +277,7 @@
       text-align: center;
       color: var(--text-leise);
       font-size: 1.15rem;
-      padding: 60px 20px;
+      padding: 48px 20px;
       border: 2px dashed var(--rand);
       border-radius: 18px;
       list-style: none;
@@ -236,7 +287,8 @@
     .plus {
       position: fixed;
       right: max(24px, env(safe-area-inset-right));
-      bottom: max(24px, env(safe-area-inset-bottom));
+      bottom: calc(var(--tableiste) + 20px + env(safe-area-inset-bottom));
+      z-index: 11;
       width: 72px;
       height: 72px;
       border-radius: 50%;
@@ -251,6 +303,171 @@
     }
     .plus:active { transform: scale(0.92); }
     .plus:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+
+    /* ===== Heute-Ansicht ===== */
+    .karte {
+      background: var(--karte);
+      border: 1px solid var(--rand);
+      border-radius: 18px;
+      padding: 20px 22px;
+    }
+
+    .heute-zusammenfassung { margin-bottom: 16px; }
+    .heute-zusammenfassung .fortschritt { margin-top: 12px; }
+
+    .warnungen { display: grid; gap: 10px; margin-bottom: 16px; }
+
+    .warnung {
+      background: var(--warnung-hell);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .warnung strong { color: var(--warnung); }
+    .warnung a { color: var(--akzent); font-weight: 600; white-space: nowrap; }
+
+    .info-box {
+      background: var(--akzent-hell);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+    }
+
+    .fach {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-leise);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      min-width: 0;
+    }
+    .fach-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .punkt {
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--akzent);
+    }
+
+    .chip.wdh { background: var(--akzent-hell); color: var(--akzent); font-weight: 600; }
+    .chip.verschoben { background: var(--warnung-hell); color: var(--warnung); font-weight: 600; }
+
+    /* Vorschau der nächsten 7 Tage */
+    .vorschau { display: grid; gap: 12px; }
+
+    .tag-karte {
+      background: var(--karte);
+      border: 1px solid var(--rand);
+      border-radius: 16px;
+      padding: 16px 20px;
+    }
+
+    .tag-kopf {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .tag-kopf strong { font-size: 1.1rem; }
+    .tag-kopf span { color: var(--text-leise); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .tag-liste {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .tag-liste li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tl-text { flex: 1; min-width: 0; }
+    .tl-thema { display: block; overflow-wrap: anywhere; }
+    .tl-fach {
+      display: block;
+      color: var(--text-leise);
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tl-min {
+      color: var(--text-leise);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tag-liste li.klausur-tag {
+      background: var(--akzent-hell);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 600;
+    }
+
+    .tag-leer { color: var(--text-leise); margin: 8px 0 0; }
+
+    /* ===== Einstellungen ===== */
+    .einstellungen-karte { padding: 8px 22px; margin-bottom: 16px; }
+
+    .einstell-zeile {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--rand);
+    }
+    .einstell-zeile:last-child { border-bottom: none; }
+
+    .einstell-name { flex: 1; font-size: 1.1rem; font-weight: 600; }
+    .einstell-hinweis {
+      width: 92px;
+      text-align: right;
+      color: var(--text-leise);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stepper button {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      border: 1px solid var(--rand);
+      background: var(--hintergrund);
+      color: var(--text);
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .stepper button:active { transform: scale(0.94); }
+    .stepper input {
+      width: 76px;
+      text-align: center;
+      padding: 12px 6px;
+    }
+
+    .summe { margin: 0 0 24px; color: var(--text-leise); font-size: 1.05rem; }
+    .summe strong { color: var(--text); }
 
     /* ===== Detailansicht ===== */
     .zurueck {
@@ -307,12 +524,9 @@
       font-weight: 600;
     }
 
-    h2.abschnitt {
-      font-size: 1.3rem;
-      margin: 0 0 12px;
-    }
+    #detail-ansicht h2.abschnitt { margin-top: 0; }
 
-    /* ===== Themen-Checkliste ===== */
+    /* ===== Checklisten (Themen und Heute) ===== */
     .themen {
       list-style: none;
       padding: 0;
@@ -340,6 +554,7 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      min-width: 0;
     }
 
     /* Die echte Checkbox ist unsichtbar, wir zeichnen ein großes Kästchen */
@@ -370,7 +585,7 @@
     .thema-haken input:checked + .kasten::after { content: "✓"; }
     .thema-haken input:focus-visible + .kasten { outline: 3px solid var(--akzent); outline-offset: 2px; }
 
-    .thema-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .thema-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 
     .thema-titel {
       font-size: 1.1rem;
@@ -553,13 +768,41 @@
       .klausur.naechste .tage { font-size: 2.6rem; }
       .zeile, .zeile.drei { grid-template-columns: 1fr; gap: 0; }
       dialog { padding: 22px; }
+      .einstell-hinweis { display: none; }
+      .stepper button { width: 46px; height: 46px; }
+      .stepper input { width: 64px; }
     }
   </style>
 </head>
 <body>
   <main>
-    <!-- ========== Ansicht 1: Startseite mit allen Klausuren ========== -->
-    <section id="start-ansicht">
+    <!-- ========== Ansicht 1: Heute (Lernplan) ========== -->
+    <section id="heute-ansicht">
+      <header>
+        <h1>Heute</h1>
+        <p class="heute" id="h-datum"></p>
+      </header>
+
+      <div class="info-box" id="h-klausur-heute" hidden></div>
+      <div class="warnungen" id="h-warnungen"></div>
+      <div class="info-box" id="h-verschoben" hidden></div>
+
+      <div class="karte heute-zusammenfassung" id="h-zusammenfassung">
+        <p class="zusammenfassung-text" id="h-zusammenfassung-text"></p>
+        <div class="fortschritt">
+          <div class="balken"><div class="balken-fuellung" id="h-balken"></div></div>
+          <span class="fortschritt-text" id="h-prozent"></span>
+        </div>
+      </div>
+
+      <ul class="themen" id="h-liste"></ul>
+
+      <h2 class="abschnitt">Nächste 7 Tage</h2>
+      <div class="vorschau" id="h-vorschau"></div>
+    </section>
+
+    <!-- ========== Ansicht 2: Countdown mit allen Klausuren ========== -->
+    <section id="start-ansicht" hidden>
       <header>
         <h1>Mein Klausur-Countdown</h1>
         <p class="heute" id="heute"></p>
@@ -570,7 +813,7 @@
       <ul class="liste" id="liste"></ul>
     </section>
 
-    <!-- ========== Ansicht 2: Detailansicht einer Klausur ========== -->
+    <!-- ========== Ansicht 3: Detailansicht einer Klausur ========== -->
     <section id="detail-ansicht" hidden>
       <button class="zurueck" id="zurueck" type="button">‹ Alle Klausuren</button>
 
@@ -614,9 +857,53 @@
         <button class="knopf primaer" type="submit">Hinzufügen</button>
       </form>
     </section>
+
+    <!-- ========== Ansicht 4: Lernzeit-Einstellungen ========== -->
+    <section id="einstellungen-ansicht" hidden>
+      <header>
+        <h1>Lernzeit</h1>
+        <p class="hinweis">Wie viele Minuten willst du an jedem Wochentag lernen? Der Lernplan passt sich sofort an.</p>
+      </header>
+
+      <div class="karte einstellungen-karte" id="e-wochentage"></div>
+      <p class="summe" id="e-summe"></p>
+
+      <h2 class="abschnitt">Wiederholung</h2>
+      <div class="karte einstellungen-karte">
+        <div class="einstell-zeile">
+          <span class="einstell-name">Tage vor jeder Klausur nur noch wiederholen</span>
+          <div class="stepper">
+            <button type="button" data-schritt="-1" aria-label="weniger">−</button>
+            <input class="eingabe" id="e-wiederholung" type="number" inputmode="numeric" min="0" max="14">
+            <button type="button" data-schritt="1" aria-label="mehr">+</button>
+          </div>
+        </div>
+      </div>
+      <p class="hinweis">
+        In diesen Tagen werden keine neuen Themen dieser Klausur mehr eingeplant, sondern die schweren
+        Themen (Schwierigkeit 3) wiederholt. Themen ohne Zeitangabe plant die App mit
+        30 / 45 / 60 Minuten ein (je nach Schwierigkeit 1 / 2 / 3, ohne Angabe 45).
+      </p>
+    </section>
   </main>
 
-  <!-- Der +-Button (nur auf der Startseite) -->
+  <!-- Tab-Leiste unten -->
+  <nav class="tabs" aria-label="Ansichten">
+    <a href="#heute" data-tab="heute">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      Heute
+    </a>
+    <a href="#klausuren" data-tab="klausuren">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      Klausuren
+    </a>
+    <a href="#einstellungen" data-tab="einstellungen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Lernzeit
+    </a>
+  </nav>
+
+  <!-- Der +-Button (nur in der Klausuren-Liste) -->
   <button class="plus" id="plus" type="button" aria-label="Klausur hinzufügen">+</button>
 
   <!-- ========== Dialog: Klausur hinzufügen / bearbeiten ========== -->
@@ -742,7 +1029,7 @@
 
   <script>
     // =====================================================================
-    // 1. Startdaten
+    // 1. Startdaten und Konstanten
     // =====================================================================
     // Diese Klausuren werden nur beim allerersten Öffnen übernommen.
     // Danach kommen die Daten aus dem Speicher des Geräts (localStorage).
@@ -754,15 +1041,55 @@
       { name: "Technische Mechanik 2",                   datum: "2027-04-01", uhrzeit: "", raum: "" },
     ];
 
-    // Unter diesem Namen liegen die Daten im localStorage.
-    const SPEICHER_SCHLUESSEL = "klausur-countdown.klausuren";
+    // Unter diesen Namen liegen die Daten im localStorage.
+    const SPEICHER_SCHLUESSEL    = "klausur-countdown.klausuren";
+    const EINSTELLUNGEN_SCHLUESSEL = "klausur-countdown.einstellungen";
+    const PLANSTAND_SCHLUESSEL   = "klausur-countdown.planstand";
 
     // Erlaubte Typen für Themen
     const TYPEN = ["Vorlesung", "Übung", "Tutorium"];
 
+    // Wochentage in der Reihenfolge Mo–So. "nr" ist die JavaScript-Nummer (0 = Sonntag).
+    const WOCHENTAGE = [
+      { nr: 1, name: "Montag" },  { nr: 2, name: "Dienstag" }, { nr: 3, name: "Mittwoch" },
+      { nr: 4, name: "Donnerstag" }, { nr: 5, name: "Freitag" }, { nr: 6, name: "Samstag" },
+      { nr: 0, name: "Sonntag" },
+    ];
+
+    // Standard-Einstellungen (Minuten pro Wochentag, 0 = Sonntag)
+    const STANDARD_EINSTELLUNGEN = {
+      minutenProTag: { 1: 90, 2: 60, 3: 90, 4: 60, 5: 60, 6: 120, 0: 0 },
+      wiederholungsTage: 3,
+    };
+
+    // Themen ohne Zeitangabe: Minuten je nach Schwierigkeit
+    const STANDARD_MINUTEN = { 1: 30, 2: 45, 3: 60 };
+    const STANDARD_MINUTEN_OHNE = 45;
+
+    // Farben, um die Fächer im Lernplan zu unterscheiden
+    const FACH_FARBEN = ["#4f46e5", "#0891b2", "#d97706", "#db2777", "#16a34a", "#7c3aed", "#dc2626"];
+
     // =====================================================================
     // 2. Laden und Speichern
     // =====================================================================
+
+    function ladeJSON(schluessel) {
+      try {
+        const text = localStorage.getItem(schluessel);
+        return text === null ? null : JSON.parse(text);
+      } catch (e) {
+        return null;   // Speicher nicht lesbar (z. B. privater Modus)
+      }
+    }
+
+    function speichereJSON(schluessel, wert) {
+      try {
+        localStorage.setItem(schluessel, JSON.stringify(wert));
+      } catch (e) {
+        // Wenn Speichern nicht geht, funktioniert die Seite trotzdem –
+        // die Änderungen sind dann nur bis zum Schließen da.
+      }
+    }
 
     // Eindeutige Nummer für jede Klausur / jedes Thema, damit wir sie wiederfinden.
     function neueId() {
@@ -783,31 +1110,29 @@
     }
 
     function laden() {
-      try {
-        const text = localStorage.getItem(SPEICHER_SCHLUESSEL);
-        if (text !== null) {
-          const daten = JSON.parse(text);
-          if (Array.isArray(daten)) return daten.map(vervollstaendigen);
-        }
-      } catch (e) {
-        // Speicher nicht lesbar (z. B. privater Modus) – dann Startdaten nehmen.
-      }
+      const daten = ladeJSON(SPEICHER_SCHLUESSEL);
+      if (Array.isArray(daten)) return daten.map(vervollstaendigen);
       // Erster Start: Startdaten übernehmen und gleich speichern.
       const start = STARTDATEN.map(vervollstaendigen);
-      speichern(start);
+      speichereJSON(SPEICHER_SCHLUESSEL, start);
       return start;
     }
 
-    function speichern(liste = klausuren) {
-      try {
-        localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(liste));
-      } catch (e) {
-        // Wenn Speichern nicht geht, funktioniert die Seite trotzdem –
-        // die Änderungen sind dann nur bis zum Schließen da.
-      }
+    function speichern() {
+      speichereJSON(SPEICHER_SCHLUESSEL, klausuren);
+    }
+
+    function einstellungenLaden() {
+      const gespeichert = ladeJSON(EINSTELLUNGEN_SCHLUESSEL) || {};
+      return {
+        minutenProTag: { ...STANDARD_EINSTELLUNGEN.minutenProTag, ...(gespeichert.minutenProTag || {}) },
+        wiederholungsTage: Number.isInteger(gespeichert.wiederholungsTage)
+          ? gespeichert.wiederholungsTage : STANDARD_EINSTELLUNGEN.wiederholungsTage,
+      };
     }
 
     let klausuren = laden();
+    let einstellungen = einstellungenLaden();
 
     function findeKlausur(id) {
       return klausuren.find(k => k.id === id);
@@ -821,6 +1146,16 @@
     function zuDatum(text) {
       const [jahr, monat, tag] = text.split("-").map(Number);
       return new Date(jahr, monat - 1, tag);
+    }
+
+    // Macht aus einem Datum wieder "2027-02-10" (so lässt es sich gut vergleichen).
+    function tagSchluessel(d) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
+             String(d.getDate()).padStart(2, "0");
+    }
+
+    function plusTage(d, anzahl) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate() + anzahl);
     }
 
     // Heutiges Datum um 0 Uhr, damit nur ganze Tage gezählt werden.
@@ -840,6 +1175,11 @@
       return datum.toLocaleDateString("de-DE", {
         weekday: "long", day: "numeric", month: "long", year: "numeric",
       });
+    }
+
+    // Kurz: "Do, 19.11."
+    function formatierenKurz(datum) {
+      return datum.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "numeric" });
     }
 
     // Was rechts groß auf der Karte steht: Zahl + Einheit
@@ -866,67 +1206,399 @@
       return m ? `${h} h ${m} min` : `${h} h`;
     }
 
-    // Baut den Fortschrittsbalken (wird auf der Karte und in der Detailansicht benutzt)
+    // Setzt Breite und Text eines Fortschrittsbalkens
     function balkenSetzen(fuellung, textEl, p) {
       fuellung.style.width = p.prozent + "%";
-      fuellung.classList.toggle("komplett", p.gesamt > 0 && p.fertig === p.gesamt);
+      fuellung.classList.toggle("komplett", p.gesamt > 0 && p.fertig >= p.gesamt);
       textEl.textContent = p.prozent + " %";
     }
 
+    function chip(text, klasse) {
+      const s = document.createElement("span");
+      s.className = "chip" + (klasse ? " " + klasse : "");
+      s.textContent = text;
+      return s;
+    }
+
+    // Jede Klausur bekommt eine feste Farbe (nach Datum sortiert)
+    function farbeVon(k) {
+      const sortiert = [...klausuren].sort((a, b) => a.datum.localeCompare(b.datum));
+      return FACH_FARBEN[sortiert.indexOf(k) % FACH_FARBEN.length];
+    }
+
     // =====================================================================
-    // 4. Ansichten wechseln (Startseite <-> Detailansicht)
+    // 4. Der Lernplan-Algorithmus
     // =====================================================================
-    // Die Detailansicht hat eine eigene Adresse, z. B. index.html#klausur/abc123.
+
+    // Wie lange dauert ein Thema? (eigene Angabe oder Schätzung nach Schwierigkeit)
+    function lernMinuten(t) {
+      return t.minuten || STANDARD_MINUTEN[t.schwierigkeit] || STANDARD_MINUTEN_OHNE;
+    }
+
+    // Wiederholen dauert etwa halb so lange, mindestens 15 Minuten.
+    function wiederholMinuten(t) {
+      return Math.max(15, Math.round(lernMinuten(t) / 2 / 5) * 5);
+    }
+
+    function minutenAm(datum) {
+      return Number(einstellungen.minutenProTag[datum.getDay()]) || 0;
+    }
+
+    function planen() {
+      const heute = heuteUmMitternacht();
+      const heuteKey = tagSchluessel(heute);
+      const W = einstellungen.wiederholungsTage;
+
+      // Alle Tage, die wir verplanen. Jeder Tag weiß, wie viele Minuten er hat und schon belegt sind.
+      const tage = new Map();
+      function tag(datum) {
+        const key = tagSchluessel(datum);
+        if (!tage.has(key)) {
+          tage.set(key, { key, datum, kapazitaet: minutenAm(datum), belegt: 0, eintraege: [] });
+        }
+        return tage.get(key);
+      }
+      function tageVonBis(von, bis) {
+        const liste = [];
+        for (let d = von; d <= bis; d = plusTage(d, 1)) liste.push(tag(d));
+        return liste;
+      }
+      function frei(t) { return t.kapazitaet - t.belegt; }
+
+      // Schritt 0: Was heute schon abgehakt wurde, zählt zur heutigen Lernzeit.
+      const erledigtHeute = [];
+      klausuren.forEach(k => k.themen.forEach(t => {
+        if (t.erledigt && t.erledigtAm === heuteKey) {
+          erledigtHeute.push({ klausur: k, thema: t, art: "lernen", minuten: lernMinuten(t), erledigt: true });
+        }
+        if (t.wiederholtAm === heuteKey) {
+          erledigtHeute.push({ klausur: k, thema: t, art: "wiederholen", minuten: wiederholMinuten(t), erledigt: true });
+        }
+      }));
+      tag(heute).belegt = erledigtHeute.reduce((s, e) => s + e.minuten, 0);
+
+      // Schritt 1: Klausuren nach Datum – die früheste zuerst (sie hat Vorrang).
+      const kommende = klausuren
+        .filter(k => k.datum > heuteKey)
+        .sort((a, b) => (a.datum + a.uhrzeit).localeCompare(b.datum + b.uhrzeit));
+
+      const defizite = [];
+
+      for (const k of kommende) {
+        const pruefung = zuDatum(k.datum);
+        let fehlend = 0;
+
+        // Letzter Tag, an dem noch Neues gelernt wird (vor den Wiederholungstagen).
+        // Ist die Klausur schon so nah, dass keine Lerntage mehr bleiben, wird bis zum Vortag gelernt.
+        let lernEnde = plusTage(pruefung, -W - 1);
+        if (lernEnde < heute) lernEnde = plusTage(pruefung, -1);
+        const lernTage = tageVonBis(heute, lernEnde);
+
+        // Schritt 2: offene Themen – schwere (3) zuerst, der Rest in seiner Reihenfolge.
+        const offen = k.themen.filter(t => !t.erledigt);
+        const reihenfolge = [
+          ...offen.filter(t => t.schwierigkeit === 3),
+          ...offen.filter(t => t.schwierigkeit !== 3),
+        ];
+
+        // Schritt 3: jedes Thema an den frühesten Tag, an dem noch genug Zeit frei ist.
+        for (const t of reihenfolge) {
+          const min = lernMinuten(t);
+          const ziel = lernTage.find(d => frei(d) >= min)
+            // Thema länger als ein ganzer Lerntag? Dann bekommt es einen eigenen, leeren Tag.
+            || lernTage.find(d => d.belegt === 0 && d.kapazitaet > 0);
+          if (ziel) {
+            ziel.eintraege.push({ klausur: k, thema: t, art: "lernen", minuten: min });
+            ziel.belegt += min;
+          } else {
+            fehlend += min;
+          }
+        }
+
+        // Schritt 4: Wiederholungstage – schwere Themen dieser Klausur gleichmäßig verteilen.
+        if (W > 0) {
+          const wStartEcht = plusTage(pruefung, -W);
+          const wStartKey = tagSchluessel(wStartEcht);
+          const wTage = tageVonBis(wStartEcht < heute ? heute : wStartEcht, plusTage(pruefung, -1));
+          const schwere = k.themen.filter(t =>
+            t.schwierigkeit === 3 && !(t.wiederholtAm && t.wiederholtAm >= wStartKey));
+
+          for (const t of schwere) {
+            const min = wiederholMinuten(t);
+            // den Wiederholungstag mit der meisten freien Zeit nehmen -> gleichmäßig verteilt
+            let ziel = null;
+            for (const d of wTage) {
+              if (frei(d) >= min && (!ziel || frei(d) > frei(ziel))) ziel = d;
+            }
+            if (ziel) {
+              ziel.eintraege.push({ klausur: k, thema: t, art: "wiederholen", minuten: min });
+              ziel.belegt += min;
+            } else {
+              fehlend += min;
+            }
+          }
+        }
+
+        if (fehlend > 0) defizite.push({ klausur: k, minuten: fehlend });
+      }
+
+      return { tage, tag, heute, heuteKey, erledigtHeute, defizite };
+    }
+
+    // Eindeutiger Schlüssel für einen Plan-Eintrag (z. B. "l:abc123" = Thema lernen)
+    function eintragSchluessel(e) {
+      return (e.art === "lernen" ? "l:" : "w:") + e.thema.id;
+    }
+
+    // Merkt sich, was heute geplant war. Am nächsten Tag sehen wir so,
+    // welche Themen nicht geschafft und deshalb verschoben wurden.
+    function verschobeneErmitteln(plan) {
+      const allesGeplant = new Set();
+      plan.tage.forEach(t => t.eintraege.forEach(e => allesGeplant.add(eintragSchluessel(e))));
+
+      let stand = ladeJSON(PLANSTAND_SCHLUESSEL);
+      if (!stand || stand.datum !== plan.heuteKey) {
+        const gestern = stand && Array.isArray(stand.geplant) ? stand.geplant : [];
+        stand = { datum: plan.heuteKey, verschoben: gestern.filter(s => allesGeplant.has(s)), geplant: [] };
+      }
+      // nur Einträge, die immer noch offen sind
+      stand.verschoben = stand.verschoben.filter(s => allesGeplant.has(s));
+      stand.geplant = plan.tag(plan.heute).eintraege.map(eintragSchluessel);
+      speichereJSON(PLANSTAND_SCHLUESSEL, stand);
+      return new Set(stand.verschoben);
+    }
+
+    // =====================================================================
+    // 5. Ansichten wechseln
+    // =====================================================================
+    // Jede Ansicht hat eine eigene Adresse: #heute, #klausuren, #klausur/abc123, #einstellungen.
     // So funktioniert auch die Zurück-Geste von Safari.
 
-    let vonStartseiteGeoeffnet = false;
+    let vonListeGeoeffnet = false;
+    let letzteAnsicht = null;
 
     function aktuelleDetailId() {
       const treffer = location.hash.match(/^#klausur\/(.+)$/);
       return treffer ? decodeURIComponent(treffer[1]) : null;
     }
 
+    function aktuelleAnsicht() {
+      const id = aktuelleDetailId();
+      if (id && findeKlausur(id)) return { name: "detail", klausur: findeKlausur(id) };
+      if (location.hash === "#klausuren" || id) return { name: "klausuren" };
+      if (location.hash === "#einstellungen") return { name: "einstellungen" };
+      return { name: "heute" };
+    }
+
     function detailOeffnen(id) {
-      vonStartseiteGeoeffnet = true;
+      vonListeGeoeffnet = true;
       location.hash = "klausur/" + encodeURIComponent(id);
     }
 
-    function zurStartseite() {
-      if (vonStartseiteGeoeffnet) {
-        vonStartseiteGeoeffnet = false;
+    function zurListe() {
+      if (vonListeGeoeffnet) {
+        vonListeGeoeffnet = false;
         history.back();
       } else {
-        location.hash = "";
+        location.hash = "klausuren";
       }
     }
 
-    let letzteAnsicht = null;
-
     function anzeigen() {
-      const id = aktuelleDetailId();
-      const k = id && findeKlausur(id);
-      const ansicht = k ? "detail:" + k.id : "start";
+      const a = aktuelleAnsicht();
 
-      document.getElementById("start-ansicht").hidden = !!k;
-      document.getElementById("detail-ansicht").hidden = !k;
-      document.getElementById("plus").hidden = !!k;
+      document.getElementById("heute-ansicht").hidden = a.name !== "heute";
+      document.getElementById("start-ansicht").hidden = a.name !== "klausuren";
+      document.getElementById("detail-ansicht").hidden = a.name !== "detail";
+      document.getElementById("einstellungen-ansicht").hidden = a.name !== "einstellungen";
+      document.getElementById("plus").hidden = a.name !== "klausuren";
 
-      if (k) detailAnzeigen(k);
-      else startseiteAnzeigen();
+      const tab = a.name === "detail" ? "klausuren" : a.name;
+      document.querySelectorAll(".tabs a").forEach(link =>
+        link.classList.toggle("aktiv", link.dataset.tab === tab));
+
+      if (a.name === "heute") heuteAnzeigen();
+      else if (a.name === "klausuren") startseiteAnzeigen();
+      else if (a.name === "detail") detailAnzeigen(a.klausur);
+      else einstellungenAnzeigen();
 
       // Beim Wechsel der Ansicht nach oben scrollen
-      if (ansicht !== letzteAnsicht) {
+      const schluessel = a.name + (a.klausur ? a.klausur.id : "");
+      if (schluessel !== letzteAnsicht) {
+        if (a.name !== "detail") vonListeGeoeffnet = false;
         window.scrollTo(0, 0);
         document.getElementById("d-meldung").hidden = true;
-        letzteAnsicht = ansicht;
+        letzteAnsicht = schluessel;
       }
     }
 
     window.addEventListener("hashchange", anzeigen);
-    document.getElementById("zurueck").addEventListener("click", zurStartseite);
+    document.getElementById("zurueck").addEventListener("click", zurListe);
 
     // =====================================================================
-    // 5. Startseite: Liste der Klausuren
+    // 6. Ansicht "Heute": Lernplan für heute und Vorschau
+    // =====================================================================
+    function heuteAnzeigen() {
+      const plan = planen();
+      const verschoben = verschobeneErmitteln(plan);
+      const heuteTag = plan.tag(plan.heute);
+
+      document.getElementById("h-datum").textContent = formatieren(plan.heute);
+
+      // Klausur heute?
+      const klausurHeute = klausuren.filter(k => k.datum === plan.heuteKey);
+      const kh = document.getElementById("h-klausur-heute");
+      kh.hidden = klausurHeute.length === 0;
+      kh.textContent = "📝 Heute: " + klausurHeute.map(k => k.name).join(", ") + " – viel Erfolg!";
+
+      // Warnungen, wenn die Zeit nicht reicht
+      const warnungen = document.getElementById("h-warnungen");
+      warnungen.innerHTML = "";
+      plan.defizite.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "warnung";
+        const gerundet = Math.ceil(d.minuten / 15) * 15;
+        div.innerHTML = `<span>⚠️</span><span><strong></strong> Es fehlen ca. ${dauerText(gerundet)} –
+          erhöhe deine Lernzeit. <a href="#einstellungen">Lernzeit anpassen</a></span>`;
+        div.querySelector("strong").textContent = d.klausur.name + ":";
+        warnungen.appendChild(div);
+      });
+
+      // Hinweis auf verschobene Themen
+      const vs = document.getElementById("h-verschoben");
+      vs.hidden = verschoben.size === 0;
+      vs.textContent = verschoben.size === 1
+        ? "↻ 1 Eintrag aus deinem letzten Plan hast du nicht geschafft – er wurde automatisch neu eingeplant."
+        : `↻ ${verschoben.size} Einträge aus deinem letzten Plan hast du nicht geschafft – sie wurden automatisch neu eingeplant.`;
+
+      // Liste für heute: erst Erledigtes, dann Geplantes
+      const eintraege = [...plan.erledigtHeute, ...heuteTag.eintraege];
+      const gesamtMin = eintraege.reduce((s, e) => s + e.minuten, 0);
+      const fertigMin = plan.erledigtHeute.reduce((s, e) => s + e.minuten, 0);
+
+      document.getElementById("h-zusammenfassung").hidden = eintraege.length === 0;
+      document.getElementById("h-zusammenfassung-text").textContent =
+        `${dauerText(fertigMin)} von ${dauerText(gesamtMin)} geschafft · ` +
+        `${plan.erledigtHeute.length} von ${eintraege.length} ${eintraege.length === 1 ? "Eintrag" : "Einträgen"}`;
+      balkenSetzen(document.getElementById("h-balken"), document.getElementById("h-prozent"), {
+        gesamt: gesamtMin, fertig: fertigMin,
+        prozent: gesamtMin ? Math.round((fertigMin / gesamtMin) * 100) : 0,
+      });
+
+      const ul = document.getElementById("h-liste");
+      ul.innerHTML = "";
+
+      if (eintraege.length === 0) {
+        const offeneThemen = klausuren.some(k => k.datum > plan.heuteKey && k.themen.some(t => !t.erledigt));
+        let text;
+        if (heuteTag.kapazitaet === 0) text = "Heute ist lernfrei. Genieß den Tag! 🎉";
+        else if (!offeneThemen) text = "Keine offenen Themen. Lege in den Klausuren Themen an oder importiere eine Liste.";
+        else text = "Für heute ist nichts geplant.";
+        ul.innerHTML = '<li class="themen-leer"></li>';
+        ul.firstChild.textContent = text;
+      }
+
+      eintraege.forEach(e => {
+        const li = document.createElement("li");
+        li.className = "thema" + (e.erledigt ? " erledigt" : "");
+        li.innerHTML = `
+          <label class="thema-haken">
+            <input type="checkbox">
+            <span class="kasten"></span>
+            <span class="thema-text">
+              <span class="fach"><span class="punkt"></span><span class="fach-name"></span></span>
+              <span class="thema-titel"></span>
+              <span class="thema-meta"></span>
+            </span>
+          </label>
+        `;
+        li.querySelector(".punkt").style.background = farbeVon(e.klausur);
+        li.querySelector(".fach-name").textContent = e.klausur.name;
+        li.querySelector(".thema-titel").textContent = e.thema.titel;
+
+        const meta = li.querySelector(".thema-meta");
+        meta.append(chip("⏱ " + dauerText(e.minuten)));
+        if (e.art === "wiederholen") meta.append(chip("Wiederholen", "wdh"));
+        if (!e.erledigt && verschoben.has(eintragSchluessel(e))) meta.append(chip("↻ verschoben", "verschoben"));
+
+        const box = li.querySelector("input");
+        box.checked = !!e.erledigt;
+        box.addEventListener("change", () => {
+          if (e.art === "lernen") {
+            e.thema.erledigt = box.checked;
+            e.thema.erledigtAm = box.checked ? plan.heuteKey : null;
+          } else {
+            e.thema.wiederholtAm = box.checked ? plan.heuteKey : null;
+          }
+          speichern();
+          anzeigen();
+        });
+
+        ul.appendChild(li);
+      });
+
+      vorschauAnzeigen(plan, verschoben);
+    }
+
+    // Vorschau: die nächsten 7 Tage
+    function vorschauAnzeigen(plan, verschoben) {
+      const box = document.getElementById("h-vorschau");
+      box.innerHTML = "";
+
+      for (let i = 1; i <= 7; i++) {
+        const datum = plusTage(plan.heute, i);
+        const t = plan.tag(datum);
+        const klausurenAmTag = klausuren.filter(k => k.datum === t.key);
+
+        const karte = document.createElement("div");
+        karte.className = "tag-karte";
+        karte.innerHTML = `
+          <div class="tag-kopf"><strong></strong><span></span></div>
+          <ul class="tag-liste"></ul>
+        `;
+        karte.querySelector("strong").textContent = i === 1 ? "Morgen" : formatierenKurz(datum);
+        karte.querySelector(".tag-kopf span").textContent =
+          t.kapazitaet ? `${dauerText(t.belegt)} / ${dauerText(t.kapazitaet)}` : "lernfrei";
+
+        const ul = karte.querySelector(".tag-liste");
+
+        klausurenAmTag.forEach(k => {
+          const li = document.createElement("li");
+          li.className = "klausur-tag";
+          li.textContent = "📝 Klausur: " + k.name + (k.uhrzeit ? ", " + k.uhrzeit + " Uhr" : "");
+          ul.appendChild(li);
+        });
+
+        t.eintraege.forEach(e => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span class="punkt"></span>
+            <span class="tl-text"><span class="tl-thema"></span><span class="tl-fach"></span></span>
+            <span class="tl-min"></span>
+          `;
+          li.querySelector(".punkt").style.background = farbeVon(e.klausur);
+          li.querySelector(".tl-thema").textContent =
+            (e.art === "wiederholen" ? "Wiederholen: " : "") + e.thema.titel +
+            (verschoben.has(eintragSchluessel(e)) ? " ↻" : "");
+          li.querySelector(".tl-fach").textContent = e.klausur.name;
+          li.querySelector(".tl-min").textContent = e.minuten + " min";
+          ul.appendChild(li);
+        });
+
+        if (ul.children.length === 0) {
+          ul.remove();
+          const p = document.createElement("p");
+          p.className = "tag-leer";
+          p.textContent = t.kapazitaet ? "Noch nichts geplant." : "Kein Lernen geplant.";
+          karte.appendChild(p);
+        }
+
+        box.appendChild(karte);
+      }
+    }
+
+    // =====================================================================
+    // 7. Ansicht "Klausuren": Countdown-Liste
     // =====================================================================
     function startseiteAnzeigen() {
       document.getElementById("heute").textContent =
@@ -1007,7 +1679,7 @@
     }
 
     // =====================================================================
-    // 6. Detailansicht: Kopf, Fortschritt und Themen-Checkliste
+    // 8. Detailansicht: Kopf, Fortschritt und Themen-Checkliste
     // =====================================================================
     function detailAnzeigen(k) {
       const datum = zuDatum(k.datum);
@@ -1027,10 +1699,10 @@
         : "Noch keine Themen – füge unten welche hinzu oder importiere eine Liste.";
       balkenSetzen(document.getElementById("d-balken"), document.getElementById("d-prozent"), p);
 
-      // Geschätzte Restzeit (nur Themen mit Minutenangabe, die noch offen sind)
+      // Geschätzte Restzeit für alle offenen Themen
       const restMinuten = k.themen
-        .filter(t => !t.erledigt && t.minuten)
-        .reduce((summe, t) => summe + t.minuten, 0);
+        .filter(t => !t.erledigt)
+        .reduce((summe, t) => summe + lernMinuten(t), 0);
       const restEl = document.getElementById("d-restzeit");
       restEl.hidden = restMinuten === 0;
       restEl.textContent = "Noch ca. " + dauerText(restMinuten) + " Lernzeit für offene Themen";
@@ -1070,11 +1742,12 @@
         }
         if (t.minuten) meta.append(chip("⏱ " + dauerText(t.minuten)));
 
-        // Abhaken
+        // Abhaken (mit Datum, damit der Lernplan weiß, was heute geschafft wurde)
         const box = li.querySelector("input");
         box.checked = !!t.erledigt;
         box.addEventListener("change", () => {
           t.erledigt = box.checked;
+          t.erledigtAm = box.checked ? tagSchluessel(heuteUmMitternacht()) : null;
           speichern();
           anzeigen();
         });
@@ -1084,13 +1757,6 @@
 
         ul.appendChild(li);
       });
-    }
-
-    function chip(text) {
-      const s = document.createElement("span");
-      s.className = "chip";
-      s.textContent = text;
-      return s;
     }
 
     // Kurze Rückmeldung oben in der Detailansicht (verschwindet nach ein paar Sekunden)
@@ -1118,7 +1784,75 @@
     });
 
     // =====================================================================
-    // 7. Dialog: Klausur hinzufügen und bearbeiten
+    // 9. Ansicht "Lernzeit": Einstellungen
+    // =====================================================================
+    function einstellungenSpeichern() {
+      speichereJSON(EINSTELLUNGEN_SCHLUESSEL, einstellungen);
+    }
+
+    // Baut einen Stepper (− Zahl +) und ruft bei Änderung "aenderung(neuerWert)" auf
+    function stepperVerbinden(container, input, schritt, min, max, aenderung) {
+      function setzen(wert) {
+        wert = Math.round(Number(wert));
+        if (!Number.isFinite(wert)) wert = min;
+        wert = Math.min(max, Math.max(min, wert));
+        input.value = wert;
+        aenderung(wert);
+      }
+      container.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () =>
+        setzen(Number(input.value) + Number(btn.dataset.schritt) * schritt)));
+      input.addEventListener("change", () => setzen(input.value));
+    }
+
+    // Zeilen für Mo–So einmal aufbauen
+    const wochentageBox = document.getElementById("e-wochentage");
+    WOCHENTAGE.forEach(w => {
+      const zeile = document.createElement("div");
+      zeile.className = "einstell-zeile";
+      zeile.innerHTML = `
+        <span class="einstell-name">${w.name}</span>
+        <div class="stepper">
+          <button type="button" data-schritt="-1" aria-label="${w.name}: 15 Minuten weniger">−</button>
+          <input class="eingabe" type="number" inputmode="numeric" min="0" max="720" step="15"
+                 aria-label="${w.name}: Minuten" data-tag="${w.nr}">
+          <button type="button" data-schritt="1" aria-label="${w.name}: 15 Minuten mehr">+</button>
+        </div>
+        <span class="einstell-hinweis"></span>
+      `;
+      const input = zeile.querySelector("input");
+      stepperVerbinden(zeile, input, 15, 0, 720, wert => {
+        einstellungen.minutenProTag[w.nr] = wert;
+        einstellungenSpeichern();
+        einstellungenAnzeigen();
+      });
+      wochentageBox.appendChild(zeile);
+    });
+
+    const wiederholungInput = document.getElementById("e-wiederholung");
+    stepperVerbinden(wiederholungInput.parentElement, wiederholungInput, 1, 0, 14, wert => {
+      einstellungen.wiederholungsTage = wert;
+      einstellungenSpeichern();
+      einstellungenAnzeigen();
+    });
+
+    function einstellungenAnzeigen() {
+      let summe = 0;
+      wochentageBox.querySelectorAll(".einstell-zeile").forEach(zeile => {
+        const input = zeile.querySelector("input");
+        const min = Number(einstellungen.minutenProTag[input.dataset.tag]) || 0;
+        summe += min;
+        if (document.activeElement !== input) input.value = min;
+        zeile.querySelector(".einstell-hinweis").textContent = min ? dauerText(min) : "frei";
+      });
+      document.getElementById("e-summe").innerHTML = "Pro Woche: <strong></strong>";
+      document.querySelector("#e-summe strong").textContent = dauerText(summe);
+      if (document.activeElement !== wiederholungInput) {
+        wiederholungInput.value = einstellungen.wiederholungsTage;
+      }
+    }
+
+    // =====================================================================
+    // 10. Dialog: Klausur hinzufügen und bearbeiten
     // =====================================================================
     const formularDialog = document.getElementById("formular-dialog");
     const feldName       = document.getElementById("f-name");
@@ -1177,13 +1911,13 @@
           klausuren = klausuren.filter(x => x.id !== k.id);
           speichern();
           formularDialog.close();
-          if (aktuelleDetailId() === k.id) zurStartseite();
+          if (aktuelleDetailId() === k.id) zurListe();
           anzeigen();
         });
     });
 
     // =====================================================================
-    // 8. Dialog: Thema bearbeiten (umbenennen, Details, löschen)
+    // 11. Dialog: Thema bearbeiten (umbenennen, Details, löschen)
     // =====================================================================
     const themaDialog = document.getElementById("thema-dialog");
     let themaKlausur = null, themaAktuell = null;
@@ -1229,7 +1963,7 @@
     });
 
     // =====================================================================
-    // 9. Import: Text (eine Zeile = ein Thema) oder JSON
+    // 12. Import: Text (eine Zeile = ein Thema) oder JSON
     // =====================================================================
     const importDialog = document.getElementById("import-dialog");
     const importText = document.getElementById("i-text");
@@ -1344,7 +2078,7 @@
     });
 
     // =====================================================================
-    // 10. Sicherheitsabfrage (für alles, was gelöscht wird)
+    // 13. Sicherheitsabfrage (für alles, was gelöscht wird)
     // =====================================================================
     const frageDialog = document.getElementById("frage-dialog");
     let frageAktion = null;
@@ -1377,13 +2111,14 @@
     });
 
     // =====================================================================
-    // 11. Start
+    // 14. Start
     // =====================================================================
     anzeigen();
-    // Jede Minute neu rechnen, damit der Countdown um Mitternacht weiterzählt
+    // Jede Minute neu rechnen, damit Countdown und Lernplan um Mitternacht weiterzählen
     setInterval(() => {
-      // nicht neu zeichnen, während ein Fenster offen ist
-      if (!document.querySelector("dialog[open]")) anzeigen();
+      // nicht neu zeichnen, während ein Fenster offen ist oder etwas eingetippt wird
+      const tippt = document.activeElement && document.activeElement.matches("input, textarea, select");
+      if (!document.querySelector("dialog[open]") && !tippt) anzeigen();
     }, 60 * 1000);
   </script>
 </body>
