@@ -2,7 +2,11 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Damit die Seite auf dem iPad-Homebildschirm wie eine App wirkt -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Klausuren">
   <title>Mein Klausur-Countdown</title>
 
   <style>
@@ -16,6 +20,9 @@
       --akzent-hell: #eef0ff;
       --rand: #e3e6ee;
       --vorbei: #9aa1b1;
+      --gefahr: #dc2626;
+      --gefahr-hell: #fdecec;
+      --schatten: 0 10px 30px rgba(20, 25, 40, 0.18);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -28,6 +35,9 @@
         --akzent-hell: #262b45;
         --rand: #2c3340;
         --vorbei: #5e6575;
+        --gefahr: #f87171;
+        --gefahr-hell: #3a2023;
+        --schatten: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
     }
 
@@ -40,12 +50,14 @@
       color: var(--text);
       line-height: 1.4;
       -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
     }
 
     main {
       max-width: 760px;
       margin: 0 auto;
-      padding: 48px 20px 64px;
+      /* unten extra Platz, damit der +-Button keine Karte verdeckt */
+      padding: 48px 20px 140px;
     }
 
     /* ===== Kopfbereich ===== */
@@ -61,6 +73,12 @@
       color: var(--text-leise);
       font-size: 1.1rem;
       margin: 0;
+    }
+
+    .hinweis {
+      color: var(--text-leise);
+      font-size: 0.95rem;
+      margin: 8px 0 0;
     }
 
     /* ===== Liste der Klausuren ===== */
@@ -81,12 +99,21 @@
       align-items: center;
       justify-content: space-between;
       gap: 20px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
+
+    /* Rückmeldung beim Antippen */
+    .klausur:active { transform: scale(0.98); }
+    .klausur:focus-visible { outline: 3px solid var(--akzent); outline-offset: 3px; }
 
     .name {
       font-size: 1.4rem;
       font-weight: 600;
       margin: 0 0 4px;
+      overflow-wrap: anywhere;
     }
 
     .datum {
@@ -153,6 +180,130 @@
     .klausur.vorbei { opacity: 0.6; }
     .klausur.vorbei .tage { color: var(--vorbei); font-size: 1.4rem; }
 
+    /* ===== Leere Liste ===== */
+    .leer {
+      text-align: center;
+      color: var(--text-leise);
+      font-size: 1.15rem;
+      padding: 60px 20px;
+      border: 2px dashed var(--rand);
+      border-radius: 18px;
+    }
+
+    /* ===== Runder +-Button unten rechts ===== */
+    .plus {
+      position: fixed;
+      right: max(24px, env(safe-area-inset-right));
+      bottom: max(24px, env(safe-area-inset-bottom));
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: none;
+      background: var(--akzent);
+      color: #fff;
+      font-size: 2.6rem;
+      line-height: 1;
+      box-shadow: var(--schatten);
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    .plus:active { transform: scale(0.92); }
+    .plus:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+
+    /* ===== Dialogfenster (Formular & Sicherheitsabfrage) ===== */
+    dialog {
+      width: calc(100% - 32px);
+      max-width: 520px;
+      border: none;
+      border-radius: 22px;
+      padding: 28px;
+      background: var(--karte);
+      color: var(--text);
+      box-shadow: var(--schatten);
+    }
+    dialog::backdrop { background: rgba(10, 12, 20, 0.45); }
+
+    dialog h2 {
+      margin: 0 0 20px;
+      font-size: 1.5rem;
+    }
+
+    .feld { margin-bottom: 18px; }
+
+    .feld label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .optional {
+      font-weight: 400;
+      color: var(--text-leise);
+    }
+
+    .feld input {
+      width: 100%;
+      min-height: 52px;
+      padding: 12px 14px;
+      /* mindestens 16px, sonst zoomt das iPad beim Antippen hinein */
+      font-size: 1.1rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--hintergrund);
+      border: 1px solid var(--rand);
+      border-radius: 12px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .feld input:focus {
+      outline: none;
+      border-color: var(--akzent);
+      box-shadow: 0 0 0 3px var(--akzent-hell);
+    }
+
+    .zeile {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .fehler {
+      color: var(--gefahr);
+      font-weight: 600;
+      margin: -6px 0 14px;
+      min-height: 1.4em;
+    }
+
+    .knoepfe {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .knoepfe .abstand { flex: 1; }
+
+    .knopf {
+      min-height: 52px;
+      padding: 0 22px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: 12px;
+      border: 1px solid var(--rand);
+      background: var(--karte);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .knopf:active { transform: scale(0.97); }
+    .knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+    .knopf.gefahr  { background: var(--gefahr-hell); border-color: transparent; color: var(--gefahr); }
+    .knopf.gefahr-voll { background: var(--gefahr); border-color: var(--gefahr); color: #fff; }
+
+    .frage-text {
+      font-size: 1.1rem;
+      margin: 0 0 22px;
+    }
+
     /* ===== Kleine Bildschirme (Handy) ===== */
     @media (max-width: 480px) {
       h1 { font-size: 1.9rem; }
@@ -160,6 +311,8 @@
       .name { font-size: 1.2rem; }
       .tage { font-size: 2.1rem; }
       .klausur.naechste .tage { font-size: 2.6rem; }
+      .zeile { grid-template-columns: 1fr; gap: 0; }
+      dialog { padding: 22px; }
     }
   </style>
 </head>
@@ -168,31 +321,114 @@
     <header>
       <h1>Mein Klausur-Countdown</h1>
       <p class="heute" id="heute"></p>
+      <p class="hinweis">Tippe auf eine Klausur, um sie zu bearbeiten.</p>
     </header>
 
     <!-- Hier werden die Klausuren per JavaScript eingefügt -->
     <ul class="liste" id="liste"></ul>
   </main>
 
+  <!-- Der +-Button -->
+  <button class="plus" id="plus" type="button" aria-label="Klausur hinzufügen">+</button>
+
+  <!-- Formular zum Hinzufügen / Bearbeiten -->
+  <dialog id="formular-dialog">
+    <form id="formular" novalidate>
+      <h2 id="formular-titel">Neue Klausur</h2>
+
+      <div class="feld">
+        <label for="f-name">Name</label>
+        <input id="f-name" type="text" autocomplete="off" placeholder="z. B. Höhere Mathematik 1">
+      </div>
+
+      <div class="feld">
+        <label for="f-datum">Datum</label>
+        <input id="f-datum" type="date">
+      </div>
+
+      <div class="zeile">
+        <div class="feld">
+          <label for="f-uhrzeit">Uhrzeit <span class="optional">(optional)</span></label>
+          <input id="f-uhrzeit" type="time">
+        </div>
+        <div class="feld">
+          <label for="f-raum">Raum <span class="optional">(optional)</span></label>
+          <input id="f-raum" type="text" autocomplete="off" placeholder="z. B. Audimax">
+        </div>
+      </div>
+
+      <p class="fehler" id="fehler" role="alert"></p>
+
+      <div class="knoepfe">
+        <button type="button" class="knopf gefahr" id="loeschen">Löschen</button>
+        <span class="abstand"></span>
+        <button type="button" class="knopf" id="abbrechen">Abbrechen</button>
+        <button type="submit" class="knopf primaer">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Sicherheitsabfrage vor dem Löschen -->
+  <dialog id="frage-dialog">
+    <h2>Klausur löschen?</h2>
+    <p class="frage-text" id="frage-text"></p>
+    <div class="knoepfe">
+      <span class="abstand"></span>
+      <button type="button" class="knopf" id="frage-nein">Abbrechen</button>
+      <button type="button" class="knopf gefahr-voll" id="frage-ja">Ja, löschen</button>
+    </div>
+  </dialog>
+
   <script>
-    // ===== 1. Deine Klausuren =====
-    // Neue Klausur hinzufügen: einfach einen Block kopieren und anpassen.
-    // Datum im Format "JJJJ-MM-TT" (Jahr-Monat-Tag), Uhrzeit als "HH:MM".
-    // Uhrzeit oder Raum noch unbekannt? Einfach "" lassen – dann steht dort "folgt".
-    const klausuren = [
-      { name: "Höhere Mathematik 1",
-        datum: "2027-02-19", uhrzeit: "", raum: "" },
-      { name: "Grundlagen der Elektrotechnik 1",
-        datum: "2027-02-22", uhrzeit: "", raum: "" },
-      { name: "IT-Systeme der industriellen Produktion",
-        datum: "2027-03-04", uhrzeit: "", raum: "" },
-      { name: "Investition und Finanzierung",
-        datum: "2027-03-23", uhrzeit: "", raum: "" },
-      { name: "Technische Mechanik 2",
-        datum: "2027-04-01", uhrzeit: "", raum: "" },
+    // ===== 1. Startdaten =====
+    // Diese Klausuren werden nur beim allerersten Öffnen übernommen.
+    // Danach kommen die Daten aus dem Speicher des Geräts (localStorage).
+    const STARTDATEN = [
+      { name: "Höhere Mathematik 1",                     datum: "2027-02-19", uhrzeit: "", raum: "" },
+      { name: "Grundlagen der Elektrotechnik 1",         datum: "2027-02-22", uhrzeit: "", raum: "" },
+      { name: "IT-Systeme der industriellen Produktion", datum: "2027-03-04", uhrzeit: "", raum: "" },
+      { name: "Investition und Finanzierung",            datum: "2027-03-23", uhrzeit: "", raum: "" },
+      { name: "Technische Mechanik 2",                   datum: "2027-04-01", uhrzeit: "", raum: "" },
     ];
 
-    // ===== 2. Hilfsfunktionen =====
+    // Unter diesem Namen liegen die Daten im localStorage.
+    const SPEICHER_SCHLUESSEL = "klausur-countdown.klausuren";
+
+    // ===== 2. Laden und Speichern =====
+
+    // Eindeutige Nummer für jede Klausur, damit wir sie wiederfinden.
+    function neueId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function laden() {
+      try {
+        const text = localStorage.getItem(SPEICHER_SCHLUESSEL);
+        if (text !== null) {
+          const daten = JSON.parse(text);
+          if (Array.isArray(daten)) return daten;
+        }
+      } catch (e) {
+        // Speicher nicht lesbar (z. B. privater Modus) – dann Startdaten nehmen.
+      }
+      // Erster Start: Startdaten übernehmen und gleich speichern.
+      const start = STARTDATEN.map(k => ({ ...k, id: neueId() }));
+      speichern(start);
+      return start;
+    }
+
+    function speichern(liste) {
+      try {
+        localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(liste));
+      } catch (e) {
+        // Wenn Speichern nicht geht, funktioniert die Seite trotzdem –
+        // die Änderungen sind dann nur bis zum Schließen da.
+      }
+    }
+
+    let klausuren = laden();
+
+    // ===== 3. Hilfsfunktionen für Datum und Tage =====
 
     // Macht aus "2027-02-10" ein Datum um 0 Uhr (lokale Zeit).
     function zuDatum(text) {
@@ -219,36 +455,36 @@
       });
     }
 
-    // ===== 3. Seite aufbauen =====
+    // ===== 4. Liste anzeigen =====
     function anzeigen() {
       document.getElementById("heute").textContent =
         "Heute ist " + formatieren(heuteUmMitternacht());
 
-      // Klausuren nach Datum sortieren und Resttage berechnen
+      const ul = document.getElementById("liste");
+      ul.innerHTML = "";
+
+      if (klausuren.length === 0) {
+        ul.innerHTML = '<li class="leer">Noch keine Klausuren eingetragen.<br>Tippe unten rechts auf <strong>+</strong>.</li>';
+        return;
+      }
+
+      // Klausuren nach Datum (und Uhrzeit) sortieren und Resttage berechnen
       const liste = klausuren
-        .map(k => {
-          const datum = zuDatum(k.datum);
-          return {
-            name: k.name, datum: datum, tage: tageBis(datum),
-            uhrzeit: k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt",
-            raum: k.raum || "Raum folgt",
-          };
-        })
-        .sort((a, b) => a.datum - b.datum);
+        .map(k => ({ ...k, datumObj: zuDatum(k.datum), tage: tageBis(zuDatum(k.datum)) }))
+        .sort((a, b) => (a.datum + (a.uhrzeit || "")).localeCompare(b.datum + (b.uhrzeit || "")));
 
       // Die nächste Klausur = die erste, die heute oder später ist
       const naechste = liste.find(k => k.tage >= 0);
 
-      const ul = document.getElementById("liste");
-      ul.innerHTML = "";
-
       liste.forEach(k => {
         const li = document.createElement("li");
         li.className = "klausur";
+        li.tabIndex = 0;
+        li.setAttribute("role", "button");
 
         let zahl, einheit;
-        if (k.tage > 1)        { zahl = k.tage; einheit = "Tage"; }
-        else if (k.tage === 1) { zahl = 1;      einheit = "Tag"; }
+        if (k.tage > 1)        { zahl = k.tage;  einheit = "Tage"; }
+        else if (k.tage === 1) { zahl = 1;       einheit = "Tag"; }
         else if (k.tage === 0) { zahl = "Heute"; einheit = "Viel Erfolg!"; }
         else                   { zahl = "Vorbei"; einheit = ""; li.classList.add("vorbei"); }
 
@@ -258,7 +494,7 @@
           <div>
             ${k === naechste ? '<span class="badge">Nächste Klausur</span>' : ""}
             <p class="name"></p>
-            <p class="datum">${formatieren(k.datum)}</p>
+            <p class="datum">${formatieren(k.datumObj)}</p>
             <div class="details">
               <span class="info">🕘 <span class="uhrzeit"></span></span>
               <span class="info">📍 <span class="raum"></span></span>
@@ -269,15 +505,113 @@
             <span class="einheit">${einheit}</span>
           </div>
         `;
+        // Eigene Texte immer mit textContent einsetzen (sicher gegen HTML-Code)
         li.querySelector(".name").textContent = k.name;
-        li.querySelector(".uhrzeit").textContent = k.uhrzeit;
-        li.querySelector(".raum").textContent = k.raum;
+        li.querySelector(".uhrzeit").textContent = k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt";
+        li.querySelector(".raum").textContent = k.raum || "Raum folgt";
+
+        // Antippen öffnet das Bearbeiten-Fenster
+        li.addEventListener("click", () => formularOeffnen(k.id));
+        li.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); formularOeffnen(k.id); }
+        });
+
         ul.appendChild(li);
       });
     }
 
+    // ===== 5. Formular: Hinzufügen und Bearbeiten =====
+    const formularDialog = document.getElementById("formular-dialog");
+    const formular       = document.getElementById("formular");
+    const feldName       = document.getElementById("f-name");
+    const feldDatum      = document.getElementById("f-datum");
+    const feldUhrzeit    = document.getElementById("f-uhrzeit");
+    const feldRaum       = document.getElementById("f-raum");
+    const fehler         = document.getElementById("fehler");
+    const knopfLoeschen  = document.getElementById("loeschen");
+
+    // Welche Klausur gerade bearbeitet wird (null = neue Klausur)
+    let aktuelleId = null;
+
+    function formularOeffnen(id) {
+      aktuelleId = id;
+      const k = klausuren.find(x => x.id === id);
+
+      document.getElementById("formular-titel").textContent = k ? "Klausur bearbeiten" : "Neue Klausur";
+      feldName.value    = k ? k.name : "";
+      feldDatum.value   = k ? k.datum : "";
+      feldUhrzeit.value = k ? k.uhrzeit : "";
+      feldRaum.value    = k ? k.raum : "";
+      fehler.textContent = "";
+      knopfLoeschen.hidden = !k;   // Löschen nur beim Bearbeiten zeigen
+
+      formularDialog.showModal();
+      // Bei neuer Klausur gleich ins Namensfeld springen
+      if (!k) feldName.focus();
+    }
+
+    formular.addEventListener("submit", e => {
+      e.preventDefault();
+
+      const name = feldName.value.trim();
+      const datum = feldDatum.value;
+      if (!name)  { fehler.textContent = "Bitte gib einen Namen ein.";  feldName.focus();  return; }
+      if (!datum) { fehler.textContent = "Bitte wähle ein Datum aus."; feldDatum.focus(); return; }
+
+      const daten = { name, datum, uhrzeit: feldUhrzeit.value, raum: feldRaum.value.trim() };
+
+      if (aktuelleId) {
+        klausuren = klausuren.map(k => k.id === aktuelleId ? { ...k, ...daten } : k);
+      } else {
+        klausuren.push({ id: neueId(), ...daten });
+      }
+
+      speichern(klausuren);
+      formularDialog.close();
+      anzeigen();
+    });
+
+    document.getElementById("abbrechen").addEventListener("click", () => formularDialog.close());
+    document.getElementById("plus").addEventListener("click", () => formularOeffnen(null));
+
+    // Antippen neben das Fenster schließt es ebenfalls
+    // (nur wenn wirklich außerhalb getippt wurde, nicht auf den Rand des Fensters)
+    function schliessenBeiTippDaneben(dialog) {
+      dialog.addEventListener("click", e => {
+        if (e.target !== dialog) return;
+        const r = dialog.getBoundingClientRect();
+        const drinnen = e.clientX >= r.left && e.clientX <= r.right &&
+                        e.clientY >= r.top  && e.clientY <= r.bottom;
+        if (!drinnen) dialog.close();
+      });
+    }
+    schliessenBeiTippDaneben(formularDialog);
+
+    // ===== 6. Löschen mit Sicherheitsabfrage =====
+    const frageDialog = document.getElementById("frage-dialog");
+
+    knopfLoeschen.addEventListener("click", () => {
+      const k = klausuren.find(x => x.id === aktuelleId);
+      document.getElementById("frage-text").textContent =
+        `Möchtest du „${k.name}“ wirklich löschen? Das kann nicht rückgängig gemacht werden.`;
+      frageDialog.showModal();
+    });
+
+    document.getElementById("frage-nein").addEventListener("click", () => frageDialog.close());
+
+    document.getElementById("frage-ja").addEventListener("click", () => {
+      klausuren = klausuren.filter(k => k.id !== aktuelleId);
+      speichern(klausuren);
+      frageDialog.close();
+      formularDialog.close();
+      anzeigen();
+    });
+
+    schliessenBeiTippDaneben(frageDialog);
+
+    // ===== 7. Start =====
     anzeigen();
-    // Um Mitternacht soll sich die Anzeige von selbst aktualisieren
+    // Jede Minute neu rechnen, damit der Countdown um Mitternacht weiterzählt
     setInterval(anzeigen, 60 * 1000);
   </script>
 </body>
