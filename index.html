@@ -95,6 +95,15 @@
       margin: 0;
     }
 
+    .details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 18px;
+      margin-top: 8px;
+      color: var(--text-leise);
+      font-size: 1rem;
+    }
+
     .countdown {
       text-align: right;
       flex-shrink: 0;
@@ -167,12 +176,20 @@
 
   <script>
     // ===== 1. Deine Klausuren =====
-    // Neue Klausur hinzufügen: einfach eine Zeile kopieren und anpassen.
-    // Datum im Format "JJJJ-MM-TT" (Jahr-Monat-Tag).
+    // Neue Klausur hinzufügen: einfach einen Block kopieren und anpassen.
+    // Datum im Format "JJJJ-MM-TT" (Jahr-Monat-Tag), Uhrzeit als "HH:MM".
+    // Uhrzeit oder Raum noch unbekannt? Einfach "" lassen – dann steht dort "folgt".
     const klausuren = [
-      { name: "Mathematik 1",        datum: "2027-02-10" },
-      { name: "BWL Grundlagen",      datum: "2027-02-17" },
-      { name: "Technische Mechanik", datum: "2027-02-24" },
+      { name: "Höhere Mathematik 1",
+        datum: "2027-02-19", uhrzeit: "", raum: "" },
+      { name: "Grundlagen der Elektrotechnik 1",
+        datum: "2027-02-22", uhrzeit: "", raum: "" },
+      { name: "IT-Systeme der industriellen Produktion",
+        datum: "2027-03-04", uhrzeit: "", raum: "" },
+      { name: "Investition und Finanzierung",
+        datum: "2027-03-23", uhrzeit: "", raum: "" },
+      { name: "Technische Mechanik 2",
+        datum: "2027-04-01", uhrzeit: "", raum: "" },
     ];
 
     // ===== 2. Hilfsfunktionen =====
@@ -211,7 +228,11 @@
       const liste = klausuren
         .map(k => {
           const datum = zuDatum(k.datum);
-          return { name: k.name, datum: datum, tage: tageBis(datum) };
+          return {
+            name: k.name, datum: datum, tage: tageBis(datum),
+            uhrzeit: k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt",
+            raum: k.raum || "Raum folgt",
+          };
         })
         .sort((a, b) => a.datum - b.datum);
 
@@ -238,6 +259,10 @@
             ${k === naechste ? '<span class="badge">Nächste Klausur</span>' : ""}
             <p class="name"></p>
             <p class="datum">${formatieren(k.datum)}</p>
+            <div class="details">
+              <span class="info">🕘 <span class="uhrzeit"></span></span>
+              <span class="info">📍 <span class="raum"></span></span>
+            </div>
           </div>
           <div class="countdown">
             <span class="tage">${zahl}</span>
@@ -245,6 +270,8 @@
           </div>
         `;
         li.querySelector(".name").textContent = k.name;
+        li.querySelector(".uhrzeit").textContent = k.uhrzeit;
+        li.querySelector(".raum").textContent = k.raum;
         ul.appendChild(li);
       });
     }
