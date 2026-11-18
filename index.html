@@ -22,6 +22,8 @@
       --vorbei: #9aa1b1;
       --gefahr: #dc2626;
       --gefahr-hell: #fdecec;
+      --erfolg: #16a34a;
+      --balken-leer: #e3e6ee;
       --schatten: 0 10px 30px rgba(20, 25, 40, 0.18);
     }
 
@@ -37,11 +39,14 @@
         --vorbei: #5e6575;
         --gefahr: #f87171;
         --gefahr-hell: #3a2023;
+        --erfolg: #4ade80;
+        --balken-leer: #2c3340;
         --schatten: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       margin: 0;
@@ -67,6 +72,7 @@
       font-size: 2.4rem;
       margin: 0 0 6px;
       letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
     }
 
     .heute {
@@ -95,14 +101,17 @@
       border: 1px solid var(--rand);
       border-radius: 18px;
       padding: 22px 26px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.12s ease;
+    }
+
+    .klausur-oben {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
 
     /* Rückmeldung beim Antippen */
@@ -149,6 +158,37 @@
       font-size: 0.95rem;
     }
 
+    /* ===== Fortschrittsbalken ===== */
+    .fortschritt {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .balken {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--balken-leer);
+      overflow: hidden;
+    }
+
+    .balken-fuellung {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--akzent);
+      transition: width 0.3s ease;
+    }
+    .balken-fuellung.komplett { background: var(--erfolg); }
+
+    .fortschritt-text {
+      color: var(--text-leise);
+      font-size: 0.95rem;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
     /* ===== Hervorhebung: nächste Klausur ===== */
     .klausur.naechste {
       background: var(--akzent-hell);
@@ -162,6 +202,7 @@
     }
 
     .klausur.naechste .name { font-size: 1.7rem; }
+    .klausur.naechste .balken { background: var(--karte); }
 
     .badge {
       display: inline-block;
@@ -188,6 +229,7 @@
       padding: 60px 20px;
       border: 2px dashed var(--rand);
       border-radius: 18px;
+      list-style: none;
     }
 
     /* ===== Runder +-Button unten rechts ===== */
@@ -210,10 +252,181 @@
     .plus:active { transform: scale(0.92); }
     .plus:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 
-    /* ===== Dialogfenster (Formular & Sicherheitsabfrage) ===== */
+    /* ===== Detailansicht ===== */
+    .zurueck {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 48px;
+      padding: 0 16px 0 10px;
+      margin: -12px 0 20px -10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--akzent);
+      background: none;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .zurueck:active { background: var(--akzent-hell); }
+
+    .detail-kopf {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .detail-kopf h1 { font-size: 2rem; }
+
+    .knopfreihe {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .zusammenfassung {
+      background: var(--karte);
+      border: 1px solid var(--rand);
+      border-radius: 18px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+    .zusammenfassung .fortschritt { margin-top: 12px; }
+    .zusammenfassung-text { margin: 0; font-size: 1.1rem; font-weight: 600; }
+    .zusammenfassung-zeit { margin: 4px 0 0; color: var(--text-leise); }
+
+    .meldung {
+      background: var(--akzent-hell);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    h2.abschnitt {
+      font-size: 1.3rem;
+      margin: 0 0 12px;
+    }
+
+    /* ===== Themen-Checkliste ===== */
+    .themen {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+      background: var(--karte);
+      border: 1px solid var(--rand);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .thema {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--rand);
+    }
+    .thema:last-child { border-bottom: none; }
+
+    .thema-haken {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 8px 12px 20px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Die echte Checkbox ist unsichtbar, wir zeichnen ein großes Kästchen */
+    .thema-haken input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .kasten {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      border: 2px solid var(--vorbei);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .thema-haken input:checked + .kasten {
+      background: var(--erfolg);
+      border-color: var(--erfolg);
+    }
+    .thema-haken input:checked + .kasten::after { content: "✓"; }
+    .thema-haken input:focus-visible + .kasten { outline: 3px solid var(--akzent); outline-offset: 2px; }
+
+    .thema-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+    .thema-titel {
+      font-size: 1.1rem;
+      overflow-wrap: anywhere;
+    }
+    .thema.erledigt .thema-titel {
+      color: var(--text-leise);
+      text-decoration: line-through;
+    }
+
+    .thema-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      color: var(--text-leise);
+      font-size: 0.9rem;
+    }
+    .thema-meta:empty { display: none; }
+
+    .chip {
+      background: var(--hintergrund);
+      border-radius: 999px;
+      padding: 1px 10px;
+    }
+
+    .icon-knopf {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 12px;
+      background: none;
+      color: var(--text-leise);
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+    .icon-knopf:active { background: var(--hintergrund); }
+
+    .themen-leer {
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--text-leise);
+    }
+
+    .thema-neu {
+      display: flex;
+      gap: 12px;
+    }
+    .thema-neu input { flex: 1; }
+
+    /* ===== Dialogfenster ===== */
     dialog {
       width: calc(100% - 32px);
-      max-width: 520px;
+      max-width: 560px;
+      max-height: calc(100% - 48px);
       border: none;
       border-radius: 22px;
       padding: 28px;
@@ -241,11 +454,11 @@
       color: var(--text-leise);
     }
 
-    .feld input {
+    /* mindestens 16px Schrift, sonst zoomt das iPad beim Antippen hinein */
+    .eingabe {
       width: 100%;
       min-height: 52px;
       padding: 12px 14px;
-      /* mindestens 16px, sonst zoomt das iPad beim Antippen hinein */
       font-size: 1.1rem;
       font-family: inherit;
       color: var(--text);
@@ -255,10 +468,24 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    .feld input:focus {
+    .eingabe:focus {
       outline: none;
       border-color: var(--akzent);
       box-shadow: 0 0 0 3px var(--akzent-hell);
+    }
+    select.eingabe {
+      background-image: linear-gradient(45deg, transparent 50%, var(--text-leise) 50%),
+                        linear-gradient(135deg, var(--text-leise) 50%, transparent 50%);
+      background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
+      background-size: 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 40px;
+    }
+    textarea.eingabe {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.5;
+      font-size: 1rem;
     }
 
     .zeile {
@@ -266,12 +493,24 @@
       grid-template-columns: 1fr 1fr;
       gap: 14px;
     }
+    .zeile.drei { grid-template-columns: 1.3fr 1fr 1fr; }
 
     .fehler {
       color: var(--gefahr);
       font-weight: 600;
       margin: -6px 0 14px;
       min-height: 1.4em;
+    }
+
+    .erklaerung {
+      color: var(--text-leise);
+      margin: -8px 0 16px;
+    }
+    .erklaerung code {
+      font-size: 0.9em;
+      background: var(--hintergrund);
+      padding: 1px 6px;
+      border-radius: 6px;
     }
 
     .knoepfe {
@@ -307,53 +546,102 @@
     /* ===== Kleine Bildschirme (Handy) ===== */
     @media (max-width: 480px) {
       h1 { font-size: 1.9rem; }
+      .detail-kopf h1 { font-size: 1.6rem; }
       .klausur { padding: 18px; }
       .name { font-size: 1.2rem; }
       .tage { font-size: 2.1rem; }
       .klausur.naechste .tage { font-size: 2.6rem; }
-      .zeile { grid-template-columns: 1fr; gap: 0; }
+      .zeile, .zeile.drei { grid-template-columns: 1fr; gap: 0; }
       dialog { padding: 22px; }
     }
   </style>
 </head>
 <body>
   <main>
-    <header>
-      <h1>Mein Klausur-Countdown</h1>
-      <p class="heute" id="heute"></p>
-      <p class="hinweis">Tippe auf eine Klausur, um sie zu bearbeiten.</p>
-    </header>
+    <!-- ========== Ansicht 1: Startseite mit allen Klausuren ========== -->
+    <section id="start-ansicht">
+      <header>
+        <h1>Mein Klausur-Countdown</h1>
+        <p class="heute" id="heute"></p>
+        <p class="hinweis">Tippe auf eine Klausur, um ihre Themen zu sehen.</p>
+      </header>
 
-    <!-- Hier werden die Klausuren per JavaScript eingefügt -->
-    <ul class="liste" id="liste"></ul>
+      <!-- Hier werden die Klausuren per JavaScript eingefügt -->
+      <ul class="liste" id="liste"></ul>
+    </section>
+
+    <!-- ========== Ansicht 2: Detailansicht einer Klausur ========== -->
+    <section id="detail-ansicht" hidden>
+      <button class="zurueck" id="zurueck" type="button">‹ Alle Klausuren</button>
+
+      <div class="detail-kopf">
+        <div>
+          <h1 id="d-name"></h1>
+          <p class="datum" id="d-datum"></p>
+          <div class="details">
+            <span>🕘 <span id="d-uhrzeit"></span></span>
+            <span>📍 <span id="d-raum"></span></span>
+          </div>
+        </div>
+        <div class="countdown">
+          <span class="tage" id="d-tage"></span>
+          <span class="einheit" id="d-einheit"></span>
+        </div>
+      </div>
+
+      <div class="knopfreihe">
+        <button class="knopf" id="d-bearbeiten" type="button">✎ Klausur bearbeiten</button>
+        <button class="knopf" id="d-importieren" type="button">⤓ Themen importieren</button>
+      </div>
+
+      <div class="zusammenfassung">
+        <p class="zusammenfassung-text" id="d-fortschritt-text"></p>
+        <p class="zusammenfassung-zeit" id="d-restzeit" hidden></p>
+        <div class="fortschritt">
+          <div class="balken"><div class="balken-fuellung" id="d-balken"></div></div>
+          <span class="fortschritt-text" id="d-prozent"></span>
+        </div>
+      </div>
+
+      <div class="meldung" id="d-meldung" role="status" hidden></div>
+
+      <h2 class="abschnitt">Themen</h2>
+      <ul class="themen" id="themen-liste"></ul>
+
+      <form class="thema-neu" id="thema-neu-form">
+        <input class="eingabe" id="thema-neu" type="text" autocomplete="off"
+               placeholder="Neues Thema …" aria-label="Neues Thema">
+        <button class="knopf primaer" type="submit">Hinzufügen</button>
+      </form>
+    </section>
   </main>
 
-  <!-- Der +-Button -->
+  <!-- Der +-Button (nur auf der Startseite) -->
   <button class="plus" id="plus" type="button" aria-label="Klausur hinzufügen">+</button>
 
-  <!-- Formular zum Hinzufügen / Bearbeiten -->
+  <!-- ========== Dialog: Klausur hinzufügen / bearbeiten ========== -->
   <dialog id="formular-dialog">
     <form id="formular" novalidate>
       <h2 id="formular-titel">Neue Klausur</h2>
 
       <div class="feld">
         <label for="f-name">Name</label>
-        <input id="f-name" type="text" autocomplete="off" placeholder="z. B. Höhere Mathematik 1">
+        <input class="eingabe" id="f-name" type="text" autocomplete="off" placeholder="z. B. Höhere Mathematik 1">
       </div>
 
       <div class="feld">
         <label for="f-datum">Datum</label>
-        <input id="f-datum" type="date">
+        <input class="eingabe" id="f-datum" type="date">
       </div>
 
       <div class="zeile">
         <div class="feld">
           <label for="f-uhrzeit">Uhrzeit <span class="optional">(optional)</span></label>
-          <input id="f-uhrzeit" type="time">
+          <input class="eingabe" id="f-uhrzeit" type="time">
         </div>
         <div class="feld">
           <label for="f-raum">Raum <span class="optional">(optional)</span></label>
-          <input id="f-raum" type="text" autocomplete="off" placeholder="z. B. Audimax">
+          <input class="eingabe" id="f-raum" type="text" autocomplete="off" placeholder="z. B. Audimax">
         </div>
       </div>
 
@@ -368,9 +656,82 @@
     </form>
   </dialog>
 
-  <!-- Sicherheitsabfrage vor dem Löschen -->
+  <!-- ========== Dialog: Thema bearbeiten ========== -->
+  <dialog id="thema-dialog">
+    <form id="thema-formular" novalidate>
+      <h2>Thema bearbeiten</h2>
+
+      <div class="feld">
+        <label for="t-titel">Titel</label>
+        <input class="eingabe" id="t-titel" type="text" autocomplete="off">
+      </div>
+
+      <div class="zeile drei">
+        <div class="feld">
+          <label for="t-typ">Typ <span class="optional">(opt.)</span></label>
+          <select class="eingabe" id="t-typ">
+            <option value="">–</option>
+            <option>Vorlesung</option>
+            <option>Übung</option>
+            <option>Tutorium</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label for="t-schwierigkeit">Schwierigkeit</label>
+          <select class="eingabe" id="t-schwierigkeit">
+            <option value="">–</option>
+            <option value="1">1 – leicht</option>
+            <option value="2">2 – mittel</option>
+            <option value="3">3 – schwer</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label for="t-minuten">Minuten</label>
+          <input class="eingabe" id="t-minuten" type="number" inputmode="numeric" min="1" step="5" placeholder="–">
+        </div>
+      </div>
+
+      <p class="fehler" id="t-fehler" role="alert"></p>
+
+      <div class="knoepfe">
+        <button type="button" class="knopf gefahr" id="t-loeschen">Löschen</button>
+        <span class="abstand"></span>
+        <button type="button" class="knopf" id="t-abbrechen">Abbrechen</button>
+        <button type="submit" class="knopf primaer">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========== Dialog: Themen importieren ========== -->
+  <dialog id="import-dialog">
+    <form id="import-formular" novalidate>
+      <h2>Themen importieren</h2>
+      <p class="erklaerung">
+        Füge eine Liste ein, z. B. ein Inhaltsverzeichnis: <strong>jede Zeile wird ein Thema</strong>.
+        Leere Zeilen und Aufzählungszeichen werden ignoriert.<br>
+        Oder füge <strong>JSON</strong> ein mit den Feldern
+        <code>titel</code>, <code>typ</code>, <code>schwierigkeit</code>, <code>geschaetzteMinuten</code>.
+      </p>
+
+      <div class="feld">
+        <label for="i-text" class="optional">Text oder JSON</label>
+        <textarea class="eingabe" id="i-text" spellcheck="false"
+                  placeholder="- Grenzwerte&#10;- Stetigkeit&#10;- Ableitungen …"></textarea>
+      </div>
+
+      <p class="fehler" id="i-fehler" role="alert"></p>
+
+      <div class="knoepfe">
+        <span class="abstand"></span>
+        <button type="button" class="knopf" id="i-abbrechen">Abbrechen</button>
+        <button type="submit" class="knopf primaer">Importieren</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========== Dialog: Sicherheitsabfrage ========== -->
   <dialog id="frage-dialog">
-    <h2>Klausur löschen?</h2>
+    <h2 id="frage-titel"></h2>
     <p class="frage-text" id="frage-text"></p>
     <div class="knoepfe">
       <span class="abstand"></span>
@@ -380,7 +741,9 @@
   </dialog>
 
   <script>
-    // ===== 1. Startdaten =====
+    // =====================================================================
+    // 1. Startdaten
+    // =====================================================================
     // Diese Klausuren werden nur beim allerersten Öffnen übernommen.
     // Danach kommen die Daten aus dem Speicher des Geräts (localStorage).
     const STARTDATEN = [
@@ -394,11 +757,29 @@
     // Unter diesem Namen liegen die Daten im localStorage.
     const SPEICHER_SCHLUESSEL = "klausur-countdown.klausuren";
 
-    // ===== 2. Laden und Speichern =====
+    // Erlaubte Typen für Themen
+    const TYPEN = ["Vorlesung", "Übung", "Tutorium"];
 
-    // Eindeutige Nummer für jede Klausur, damit wir sie wiederfinden.
+    // =====================================================================
+    // 2. Laden und Speichern
+    // =====================================================================
+
+    // Eindeutige Nummer für jede Klausur / jedes Thema, damit wir sie wiederfinden.
     function neueId() {
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    // Sorgt dafür, dass jede Klausur alle Felder hat –
+    // auch ältere gespeicherte Klausuren, die noch keine Themen hatten.
+    function vervollstaendigen(k) {
+      return {
+        id: k.id || neueId(),
+        name: k.name || "",
+        datum: k.datum,
+        uhrzeit: k.uhrzeit || "",
+        raum: k.raum || "",
+        themen: Array.isArray(k.themen) ? k.themen : [],
+      };
     }
 
     function laden() {
@@ -406,18 +787,18 @@
         const text = localStorage.getItem(SPEICHER_SCHLUESSEL);
         if (text !== null) {
           const daten = JSON.parse(text);
-          if (Array.isArray(daten)) return daten;
+          if (Array.isArray(daten)) return daten.map(vervollstaendigen);
         }
       } catch (e) {
         // Speicher nicht lesbar (z. B. privater Modus) – dann Startdaten nehmen.
       }
       // Erster Start: Startdaten übernehmen und gleich speichern.
-      const start = STARTDATEN.map(k => ({ ...k, id: neueId() }));
+      const start = STARTDATEN.map(vervollstaendigen);
       speichern(start);
       return start;
     }
 
-    function speichern(liste) {
+    function speichern(liste = klausuren) {
       try {
         localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(liste));
       } catch (e) {
@@ -428,7 +809,13 @@
 
     let klausuren = laden();
 
-    // ===== 3. Hilfsfunktionen für Datum und Tage =====
+    function findeKlausur(id) {
+      return klausuren.find(k => k.id === id);
+    }
+
+    // =====================================================================
+    // 3. Hilfsfunktionen
+    // =====================================================================
 
     // Macht aus "2027-02-10" ein Datum um 0 Uhr (lokale Zeit).
     function zuDatum(text) {
@@ -455,8 +842,93 @@
       });
     }
 
-    // ===== 4. Liste anzeigen =====
+    // Was rechts groß auf der Karte steht: Zahl + Einheit
+    function countdownText(tage) {
+      if (tage > 1)   return { zahl: tage,     einheit: "Tage" };
+      if (tage === 1) return { zahl: 1,        einheit: "Tag" };
+      if (tage === 0) return { zahl: "Heute",  einheit: "Viel Erfolg!" };
+      return              { zahl: "Vorbei", einheit: "" };
+    }
+
+    // Wie viele Themen sind abgehakt?
+    function fortschritt(k) {
+      const gesamt = k.themen.length;
+      const fertig = k.themen.filter(t => t.erledigt).length;
+      const prozent = gesamt ? Math.round((fertig / gesamt) * 100) : 0;
+      return { gesamt, fertig, prozent };
+    }
+
+    // 135 -> "2 h 15 min"
+    function dauerText(minuten) {
+      const h = Math.floor(minuten / 60);
+      const m = minuten % 60;
+      if (h === 0) return m + " min";
+      return m ? `${h} h ${m} min` : `${h} h`;
+    }
+
+    // Baut den Fortschrittsbalken (wird auf der Karte und in der Detailansicht benutzt)
+    function balkenSetzen(fuellung, textEl, p) {
+      fuellung.style.width = p.prozent + "%";
+      fuellung.classList.toggle("komplett", p.gesamt > 0 && p.fertig === p.gesamt);
+      textEl.textContent = p.prozent + " %";
+    }
+
+    // =====================================================================
+    // 4. Ansichten wechseln (Startseite <-> Detailansicht)
+    // =====================================================================
+    // Die Detailansicht hat eine eigene Adresse, z. B. index.html#klausur/abc123.
+    // So funktioniert auch die Zurück-Geste von Safari.
+
+    let vonStartseiteGeoeffnet = false;
+
+    function aktuelleDetailId() {
+      const treffer = location.hash.match(/^#klausur\/(.+)$/);
+      return treffer ? decodeURIComponent(treffer[1]) : null;
+    }
+
+    function detailOeffnen(id) {
+      vonStartseiteGeoeffnet = true;
+      location.hash = "klausur/" + encodeURIComponent(id);
+    }
+
+    function zurStartseite() {
+      if (vonStartseiteGeoeffnet) {
+        vonStartseiteGeoeffnet = false;
+        history.back();
+      } else {
+        location.hash = "";
+      }
+    }
+
+    let letzteAnsicht = null;
+
     function anzeigen() {
+      const id = aktuelleDetailId();
+      const k = id && findeKlausur(id);
+      const ansicht = k ? "detail:" + k.id : "start";
+
+      document.getElementById("start-ansicht").hidden = !!k;
+      document.getElementById("detail-ansicht").hidden = !k;
+      document.getElementById("plus").hidden = !!k;
+
+      if (k) detailAnzeigen(k);
+      else startseiteAnzeigen();
+
+      // Beim Wechsel der Ansicht nach oben scrollen
+      if (ansicht !== letzteAnsicht) {
+        window.scrollTo(0, 0);
+        document.getElementById("d-meldung").hidden = true;
+        letzteAnsicht = ansicht;
+      }
+    }
+
+    window.addEventListener("hashchange", anzeigen);
+    document.getElementById("zurueck").addEventListener("click", zurStartseite);
+
+    // =====================================================================
+    // 5. Startseite: Liste der Klausuren
+    // =====================================================================
+    function startseiteAnzeigen() {
       document.getElementById("heute").textContent =
         "Heute ist " + formatieren(heuteUmMitternacht());
 
@@ -468,41 +940,45 @@
         return;
       }
 
-      // Klausuren nach Datum (und Uhrzeit) sortieren und Resttage berechnen
-      const liste = klausuren
-        .map(k => ({ ...k, datumObj: zuDatum(k.datum), tage: tageBis(zuDatum(k.datum)) }))
-        .sort((a, b) => (a.datum + (a.uhrzeit || "")).localeCompare(b.datum + (b.uhrzeit || "")));
+      // Klausuren nach Datum (und Uhrzeit) sortieren
+      const liste = [...klausuren].sort((a, b) =>
+        (a.datum + a.uhrzeit).localeCompare(b.datum + b.uhrzeit));
 
       // Die nächste Klausur = die erste, die heute oder später ist
-      const naechste = liste.find(k => k.tage >= 0);
+      const naechste = liste.find(k => tageBis(zuDatum(k.datum)) >= 0);
 
       liste.forEach(k => {
+        const datum = zuDatum(k.datum);
+        const tage = tageBis(datum);
+        const cd = countdownText(tage);
+        const p = fortschritt(k);
+
         const li = document.createElement("li");
         li.className = "klausur";
         li.tabIndex = 0;
         li.setAttribute("role", "button");
-
-        let zahl, einheit;
-        if (k.tage > 1)        { zahl = k.tage;  einheit = "Tage"; }
-        else if (k.tage === 1) { zahl = 1;       einheit = "Tag"; }
-        else if (k.tage === 0) { zahl = "Heute"; einheit = "Viel Erfolg!"; }
-        else                   { zahl = "Vorbei"; einheit = ""; li.classList.add("vorbei"); }
-
+        if (tage < 0) li.classList.add("vorbei");
         if (k === naechste) li.classList.add("naechste");
 
         li.innerHTML = `
-          <div>
-            ${k === naechste ? '<span class="badge">Nächste Klausur</span>' : ""}
-            <p class="name"></p>
-            <p class="datum">${formatieren(k.datumObj)}</p>
-            <div class="details">
-              <span class="info">🕘 <span class="uhrzeit"></span></span>
-              <span class="info">📍 <span class="raum"></span></span>
+          <div class="klausur-oben">
+            <div>
+              ${k === naechste ? '<span class="badge">Nächste Klausur</span>' : ""}
+              <p class="name"></p>
+              <p class="datum">${formatieren(datum)}</p>
+              <div class="details">
+                <span>🕘 <span class="uhrzeit"></span></span>
+                <span>📍 <span class="raum"></span></span>
+              </div>
+            </div>
+            <div class="countdown">
+              <span class="tage">${cd.zahl}</span>
+              <span class="einheit">${cd.einheit}</span>
             </div>
           </div>
-          <div class="countdown">
-            <span class="tage">${zahl}</span>
-            <span class="einheit">${einheit}</span>
+          <div class="fortschritt">
+            <div class="balken"><div class="balken-fuellung"></div></div>
+            <span class="fortschritt-text"></span>
           </div>
         `;
         // Eigene Texte immer mit textContent einsetzen (sicher gegen HTML-Code)
@@ -510,32 +986,153 @@
         li.querySelector(".uhrzeit").textContent = k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt";
         li.querySelector(".raum").textContent = k.raum || "Raum folgt";
 
-        // Antippen öffnet das Bearbeiten-Fenster
-        li.addEventListener("click", () => formularOeffnen(k.id));
+        // Fortschrittsbalken
+        const textEl = li.querySelector(".fortschritt-text");
+        if (p.gesamt === 0) {
+          li.querySelector(".balken").hidden = true;
+          textEl.textContent = "Noch keine Themen";
+        } else {
+          balkenSetzen(li.querySelector(".balken-fuellung"), textEl, p);
+          textEl.textContent = `${p.fertig}/${p.gesamt} Themen · ${p.prozent} %`;
+        }
+
+        // Antippen öffnet die Detailansicht
+        li.addEventListener("click", () => detailOeffnen(k.id));
         li.addEventListener("keydown", e => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); formularOeffnen(k.id); }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); detailOeffnen(k.id); }
         });
 
         ul.appendChild(li);
       });
     }
 
-    // ===== 5. Formular: Hinzufügen und Bearbeiten =====
+    // =====================================================================
+    // 6. Detailansicht: Kopf, Fortschritt und Themen-Checkliste
+    // =====================================================================
+    function detailAnzeigen(k) {
+      const datum = zuDatum(k.datum);
+      const cd = countdownText(tageBis(datum));
+
+      document.getElementById("d-name").textContent = k.name;
+      document.getElementById("d-datum").textContent = formatieren(datum);
+      document.getElementById("d-uhrzeit").textContent = k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt";
+      document.getElementById("d-raum").textContent = k.raum || "Raum folgt";
+      document.getElementById("d-tage").textContent = cd.zahl;
+      document.getElementById("d-einheit").textContent = cd.einheit;
+
+      // Zusammenfassung oben
+      const p = fortschritt(k);
+      document.getElementById("d-fortschritt-text").textContent = p.gesamt
+        ? `${p.fertig} von ${p.gesamt} Themen erledigt`
+        : "Noch keine Themen – füge unten welche hinzu oder importiere eine Liste.";
+      balkenSetzen(document.getElementById("d-balken"), document.getElementById("d-prozent"), p);
+
+      // Geschätzte Restzeit (nur Themen mit Minutenangabe, die noch offen sind)
+      const restMinuten = k.themen
+        .filter(t => !t.erledigt && t.minuten)
+        .reduce((summe, t) => summe + t.minuten, 0);
+      const restEl = document.getElementById("d-restzeit");
+      restEl.hidden = restMinuten === 0;
+      restEl.textContent = "Noch ca. " + dauerText(restMinuten) + " Lernzeit für offene Themen";
+
+      // Checkliste
+      const ul = document.getElementById("themen-liste");
+      ul.innerHTML = "";
+
+      if (k.themen.length === 0) {
+        ul.innerHTML = '<li class="themen-leer">Hier erscheinen deine Themen.</li>';
+        return;
+      }
+
+      k.themen.forEach(t => {
+        const li = document.createElement("li");
+        li.className = "thema" + (t.erledigt ? " erledigt" : "");
+        li.innerHTML = `
+          <label class="thema-haken">
+            <input type="checkbox">
+            <span class="kasten"></span>
+            <span class="thema-text">
+              <span class="thema-titel"></span>
+              <span class="thema-meta"></span>
+            </span>
+          </label>
+          <button class="icon-knopf" type="button" aria-label="Thema bearbeiten">✎</button>
+        `;
+        li.querySelector(".thema-titel").textContent = t.titel;
+
+        // Zusatzinfos als kleine Chips
+        const meta = li.querySelector(".thema-meta");
+        if (t.typ) meta.append(chip(t.typ));
+        if (t.schwierigkeit) {
+          const c = chip("●".repeat(t.schwierigkeit) + "○".repeat(3 - t.schwierigkeit));
+          c.title = "Schwierigkeit " + t.schwierigkeit + " von 3";
+          meta.append(c);
+        }
+        if (t.minuten) meta.append(chip("⏱ " + dauerText(t.minuten)));
+
+        // Abhaken
+        const box = li.querySelector("input");
+        box.checked = !!t.erledigt;
+        box.addEventListener("change", () => {
+          t.erledigt = box.checked;
+          speichern();
+          anzeigen();
+        });
+
+        // Bearbeiten
+        li.querySelector(".icon-knopf").addEventListener("click", () => themaDialogOeffnen(k, t));
+
+        ul.appendChild(li);
+      });
+    }
+
+    function chip(text) {
+      const s = document.createElement("span");
+      s.className = "chip";
+      s.textContent = text;
+      return s;
+    }
+
+    // Kurze Rückmeldung oben in der Detailansicht (verschwindet nach ein paar Sekunden)
+    let meldungTimer;
+    function meldung(text) {
+      const el = document.getElementById("d-meldung");
+      el.textContent = text;
+      el.hidden = false;
+      clearTimeout(meldungTimer);
+      meldungTimer = setTimeout(() => { el.hidden = true; }, 5000);
+    }
+
+    // Einzelnes Thema hinzufügen
+    document.getElementById("thema-neu-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const k = findeKlausur(aktuelleDetailId());
+      const feld = document.getElementById("thema-neu");
+      const titel = feld.value.trim();
+      if (!k || !titel) return;
+      k.themen.push({ id: neueId(), titel, erledigt: false });
+      speichern();
+      feld.value = "";
+      anzeigen();
+      feld.focus();   // gleich das nächste Thema eintippen
+    });
+
+    // =====================================================================
+    // 7. Dialog: Klausur hinzufügen und bearbeiten
+    // =====================================================================
     const formularDialog = document.getElementById("formular-dialog");
-    const formular       = document.getElementById("formular");
     const feldName       = document.getElementById("f-name");
     const feldDatum      = document.getElementById("f-datum");
     const feldUhrzeit    = document.getElementById("f-uhrzeit");
     const feldRaum       = document.getElementById("f-raum");
     const fehler         = document.getElementById("fehler");
-    const knopfLoeschen  = document.getElementById("loeschen");
 
     // Welche Klausur gerade bearbeitet wird (null = neue Klausur)
     let aktuelleId = null;
 
     function formularOeffnen(id) {
       aktuelleId = id;
-      const k = klausuren.find(x => x.id === id);
+      const k = findeKlausur(id);
 
       document.getElementById("formular-titel").textContent = k ? "Klausur bearbeiten" : "Neue Klausur";
       feldName.value    = k ? k.name : "";
@@ -543,14 +1140,13 @@
       feldUhrzeit.value = k ? k.uhrzeit : "";
       feldRaum.value    = k ? k.raum : "";
       fehler.textContent = "";
-      knopfLoeschen.hidden = !k;   // Löschen nur beim Bearbeiten zeigen
+      document.getElementById("loeschen").hidden = !k;   // Löschen nur beim Bearbeiten
 
       formularDialog.showModal();
-      // Bei neuer Klausur gleich ins Namensfeld springen
       if (!k) feldName.focus();
     }
 
-    formular.addEventListener("submit", e => {
+    document.getElementById("formular").addEventListener("submit", e => {
       e.preventDefault();
 
       const name = feldName.value.trim();
@@ -559,24 +1155,218 @@
       if (!datum) { fehler.textContent = "Bitte wähle ein Datum aus."; feldDatum.focus(); return; }
 
       const daten = { name, datum, uhrzeit: feldUhrzeit.value, raum: feldRaum.value.trim() };
+      const k = findeKlausur(aktuelleId);
 
-      if (aktuelleId) {
-        klausuren = klausuren.map(k => k.id === aktuelleId ? { ...k, ...daten } : k);
-      } else {
-        klausuren.push({ id: neueId(), ...daten });
-      }
+      if (k) Object.assign(k, daten);
+      else klausuren.push(vervollstaendigen(daten));
 
-      speichern(klausuren);
+      speichern();
       formularDialog.close();
       anzeigen();
     });
 
     document.getElementById("abbrechen").addEventListener("click", () => formularDialog.close());
     document.getElementById("plus").addEventListener("click", () => formularOeffnen(null));
+    document.getElementById("d-bearbeiten").addEventListener("click", () => formularOeffnen(aktuelleDetailId()));
 
-    // Antippen neben das Fenster schließt es ebenfalls
+    document.getElementById("loeschen").addEventListener("click", () => {
+      const k = findeKlausur(aktuelleId);
+      fragen("Klausur löschen?",
+        `Möchtest du „${k.name}“ mit allen Themen wirklich löschen? Das kann nicht rückgängig gemacht werden.`,
+        () => {
+          klausuren = klausuren.filter(x => x.id !== k.id);
+          speichern();
+          formularDialog.close();
+          if (aktuelleDetailId() === k.id) zurStartseite();
+          anzeigen();
+        });
+    });
+
+    // =====================================================================
+    // 8. Dialog: Thema bearbeiten (umbenennen, Details, löschen)
+    // =====================================================================
+    const themaDialog = document.getElementById("thema-dialog");
+    let themaKlausur = null, themaAktuell = null;
+
+    function themaDialogOeffnen(k, t) {
+      themaKlausur = k;
+      themaAktuell = t;
+      document.getElementById("t-titel").value = t.titel;
+      document.getElementById("t-typ").value = t.typ || "";
+      document.getElementById("t-schwierigkeit").value = t.schwierigkeit || "";
+      document.getElementById("t-minuten").value = t.minuten || "";
+      document.getElementById("t-fehler").textContent = "";
+      themaDialog.showModal();
+    }
+
+    document.getElementById("thema-formular").addEventListener("submit", e => {
+      e.preventDefault();
+      const titel = document.getElementById("t-titel").value.trim();
+      if (!titel) {
+        document.getElementById("t-fehler").textContent = "Bitte gib einen Titel ein.";
+        return;
+      }
+      themaAktuell.titel = titel;
+      themaAktuell.typ = document.getElementById("t-typ").value || null;
+      themaAktuell.schwierigkeit = Number(document.getElementById("t-schwierigkeit").value) || null;
+      const min = Math.round(Number(document.getElementById("t-minuten").value));
+      themaAktuell.minuten = min > 0 ? min : null;
+      speichern();
+      themaDialog.close();
+      anzeigen();
+    });
+
+    document.getElementById("t-abbrechen").addEventListener("click", () => themaDialog.close());
+
+    document.getElementById("t-loeschen").addEventListener("click", () => {
+      const k = themaKlausur, t = themaAktuell;
+      fragen("Thema löschen?", `Möchtest du das Thema „${t.titel}“ wirklich löschen?`, () => {
+        k.themen = k.themen.filter(x => x.id !== t.id);
+        speichern();
+        themaDialog.close();
+        anzeigen();
+      });
+    });
+
+    // =====================================================================
+    // 9. Import: Text (eine Zeile = ein Thema) oder JSON
+    // =====================================================================
+    const importDialog = document.getElementById("import-dialog");
+    const importText = document.getElementById("i-text");
+    const importFehler = document.getElementById("i-fehler");
+
+    document.getElementById("d-importieren").addEventListener("click", () => {
+      importText.value = "";
+      importFehler.textContent = "";
+      importDialog.showModal();
+    });
+    document.getElementById("i-abbrechen").addEventListener("click", () => importDialog.close());
+
+    // Entscheidet: JSON oder normaler Text?
+    function importAuswerten(eingabe) {
+      let text = eingabe.trim();
+      // Claude packt JSON oft in ```json ... ``` – das entfernen wir.
+      text = text.replace(/^```[a-zA-Z]*\s*\n/, "").replace(/\n?```\s*$/, "").trim();
+
+      if (!text) throw new Error("Bitte füge zuerst einen Text ein.");
+      if (text.startsWith("[") || text.startsWith("{")) return jsonAuswerten(text);
+      return textAuswerten(text);
+    }
+
+    // Normaler Text: jede Zeile wird ein Thema
+    function textAuswerten(text) {
+      // Aufzählungszeichen am Zeilenanfang: - * + • ◦ ▪ – — · > sowie Kästchen wie [ ] oder ☐
+      const aufzaehlung = /^\s*(?:[-*+•◦▪▫●○■□–—·>»→✓✔☐☑]|\[[ xX]?\])\s*/;
+
+      return text.split(/\r?\n/)
+        .map(zeile => {
+          let z = zeile;
+          // zweimal, damit auch "- [ ] Thema" sauber wird
+          z = z.replace(aufzaehlung, "").replace(aufzaehlung, "");
+          // Seitenzahlen aus Inhaltsverzeichnissen: "Grenzwerte ........ 12"
+          z = z.replace(/\s*(?:[.·…]\s*){2,}\d+\s*$/, "").replace(/\t+\d+\s*$/, "");
+          return z.trim();
+        })
+        // leere Zeilen und Zeilen ohne Buchstaben/Ziffern (z. B. "-----") ignorieren
+        .filter(z => /[\p{L}\p{N}]/u.test(z))
+        .map(titel => ({ titel }));
+    }
+
+    // JSON: Liste von Themen mit titel, typ, schwierigkeit, geschaetzteMinuten
+    function jsonAuswerten(text) {
+      let daten;
+      try {
+        daten = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Das sieht wie JSON aus, enthält aber einen Fehler. Prüfe Klammern, Kommas und Anführungszeichen.");
+      }
+      // Erlaubt auch { "themen": [ ... ] }
+      if (daten && !Array.isArray(daten) && Array.isArray(daten.themen)) daten = daten.themen;
+      if (!Array.isArray(daten)) {
+        throw new Error("Das JSON muss eine Liste sein, also mit [ beginnen und mit ] enden.");
+      }
+
+      return daten
+        .map(eintrag => {
+          if (typeof eintrag === "string") return { titel: eintrag.trim() };
+          if (!eintrag || typeof eintrag !== "object") return { titel: "" };
+
+          const titel = String(eintrag.titel ?? eintrag.title ?? "").trim();
+
+          // Typ: groß/klein egal, "Uebung" wird zu "Übung"
+          const typRoh = String(eintrag.typ ?? "").trim().toLowerCase().replace("ue", "ü");
+          const typ = TYPEN.find(t => t.toLowerCase() === typRoh) || null;
+
+          const s = Math.round(Number(eintrag.schwierigkeit));
+          const schwierigkeit = s >= 1 && s <= 3 ? s : null;
+
+          const m = Math.round(Number(eintrag.geschaetzteMinuten));
+          const minuten = m > 0 ? m : null;
+
+          return { titel, typ, schwierigkeit, minuten };
+        })
+        .filter(t => t.titel);
+    }
+
+    document.getElementById("import-formular").addEventListener("submit", e => {
+      e.preventDefault();
+      const k = findeKlausur(aktuelleDetailId());
+      if (!k) return;
+
+      let neu;
+      try {
+        neu = importAuswerten(importText.value);
+      } catch (fehlerObj) {
+        importFehler.textContent = fehlerObj.message;
+        return;
+      }
+      if (neu.length === 0) {
+        importFehler.textContent = "Ich konnte keine Themen finden.";
+        return;
+      }
+
+      // Doppelte Themen (gleicher Titel) überspringen
+      const vorhanden = new Set(k.themen.map(t => t.titel.toLowerCase()));
+      let hinzugefuegt = 0, doppelt = 0;
+      neu.forEach(t => {
+        const schluessel = t.titel.toLowerCase();
+        if (vorhanden.has(schluessel)) { doppelt++; return; }
+        vorhanden.add(schluessel);
+        k.themen.push({ id: neueId(), erledigt: false, ...t });
+        hinzugefuegt++;
+      });
+
+      speichern();
+      importDialog.close();
+      anzeigen();
+      meldung(`${hinzugefuegt} ${hinzugefuegt === 1 ? "Thema" : "Themen"} importiert` +
+              (doppelt ? ` · ${doppelt} doppelte übersprungen` : "") + ".");
+    });
+
+    // =====================================================================
+    // 10. Sicherheitsabfrage (für alles, was gelöscht wird)
+    // =====================================================================
+    const frageDialog = document.getElementById("frage-dialog");
+    let frageAktion = null;
+
+    function fragen(titel, text, aktion) {
+      document.getElementById("frage-titel").textContent = titel;
+      document.getElementById("frage-text").textContent = text;
+      frageAktion = aktion;
+      frageDialog.showModal();
+    }
+
+    document.getElementById("frage-nein").addEventListener("click", () => frageDialog.close());
+    document.getElementById("frage-ja").addEventListener("click", () => {
+      const aktion = frageAktion;
+      frageAktion = null;
+      frageDialog.close();
+      if (aktion) aktion();
+    });
+
+    // Antippen neben ein Fenster schließt es
     // (nur wenn wirklich außerhalb getippt wurde, nicht auf den Rand des Fensters)
-    function schliessenBeiTippDaneben(dialog) {
+    document.querySelectorAll("dialog").forEach(dialog => {
       dialog.addEventListener("click", e => {
         if (e.target !== dialog) return;
         const r = dialog.getBoundingClientRect();
@@ -584,35 +1374,17 @@
                         e.clientY >= r.top  && e.clientY <= r.bottom;
         if (!drinnen) dialog.close();
       });
-    }
-    schliessenBeiTippDaneben(formularDialog);
-
-    // ===== 6. Löschen mit Sicherheitsabfrage =====
-    const frageDialog = document.getElementById("frage-dialog");
-
-    knopfLoeschen.addEventListener("click", () => {
-      const k = klausuren.find(x => x.id === aktuelleId);
-      document.getElementById("frage-text").textContent =
-        `Möchtest du „${k.name}“ wirklich löschen? Das kann nicht rückgängig gemacht werden.`;
-      frageDialog.showModal();
     });
 
-    document.getElementById("frage-nein").addEventListener("click", () => frageDialog.close());
-
-    document.getElementById("frage-ja").addEventListener("click", () => {
-      klausuren = klausuren.filter(k => k.id !== aktuelleId);
-      speichern(klausuren);
-      frageDialog.close();
-      formularDialog.close();
-      anzeigen();
-    });
-
-    schliessenBeiTippDaneben(frageDialog);
-
-    // ===== 7. Start =====
+    // =====================================================================
+    // 11. Start
+    // =====================================================================
     anzeigen();
     // Jede Minute neu rechnen, damit der Countdown um Mitternacht weiterzählt
-    setInterval(anzeigen, 60 * 1000);
+    setInterval(() => {
+      // nicht neu zeichnen, während ein Fenster offen ist
+      if (!document.querySelector("dialog[open]")) anzeigen();
+    }, 60 * 1000);
   </script>
 </body>
 </html>
