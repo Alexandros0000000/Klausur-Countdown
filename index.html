@@ -128,6 +128,19 @@
     .tabs a.aktiv { color: var(--akzent); }
     .tabs a:active { background: var(--hintergrund); }
 
+    .tab-icon { position: relative; display: flex; }
+    /* kleiner Punkt am Einstellungen-Tab als dezente Backup-Erinnerung */
+    .tab-punkt {
+      position: absolute;
+      top: -2px;
+      right: -4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warnung);
+      border: 2px solid var(--karte);
+    }
+
     .tabs svg {
       width: 26px;
       height: 26px;
@@ -465,6 +478,13 @@
       text-align: center;
       padding: 12px 6px;
     }
+
+    h2.abschnitt.erster { margin-top: 0; }
+    .abschnitt-hinweis { margin: -4px 0 12px; }
+
+    .backup-karte .hinweis { margin: 0 0 16px; }
+    .backup-status { margin: 0 0 8px; font-size: 1.1rem; font-weight: 600; }
+    .backup-status.alt { color: var(--warnung); }
 
     .summe { margin: 0 0 24px; color: var(--text-leise); font-size: 1.05rem; }
     .summe strong { color: var(--text); }
@@ -858,13 +878,16 @@
       </form>
     </section>
 
-    <!-- ========== Ansicht 4: Lernzeit-Einstellungen ========== -->
+    <!-- ========== Ansicht 4: Einstellungen (Lernzeit, Wiederholung, Backup) ========== -->
     <section id="einstellungen-ansicht" hidden>
       <header>
-        <h1>Lernzeit</h1>
-        <p class="hinweis">Wie viele Minuten willst du an jedem Wochentag lernen? Der Lernplan passt sich sofort an.</p>
+        <h1>Einstellungen</h1>
       </header>
 
+      <div class="meldung" id="e-meldung" role="status" hidden></div>
+
+      <h2 class="abschnitt erster">Lernzeit</h2>
+      <p class="hinweis abschnitt-hinweis">Wie viele Minuten willst du an jedem Wochentag lernen? Der Lernplan passt sich sofort an.</p>
       <div class="karte einstellungen-karte" id="e-wochentage"></div>
       <p class="summe" id="e-summe"></p>
 
@@ -884,6 +907,21 @@
         Themen (Schwierigkeit 3) wiederholt. Themen ohne Zeitangabe plant die App mit
         30 / 45 / 60 Minuten ein (je nach Schwierigkeit 1 / 2 / 3, ohne Angabe 45).
       </p>
+
+      <h2 class="abschnitt">Backup</h2>
+      <div class="karte backup-karte">
+        <p class="backup-status" id="e-backup-status"></p>
+        <p class="hinweis">
+          Sichert alle Klausuren, Themen, Häkchen, Lernzeiten und Einstellungen in einer Datei.
+          Auf dem iPad wählst du danach „In Dateien sichern“.
+        </p>
+        <div class="knoepfe">
+          <button type="button" class="knopf primaer" id="e-export">⤒ Backup exportieren</button>
+          <button type="button" class="knopf" id="e-import">⤓ Backup importieren</button>
+        </div>
+        <!-- unsichtbares Dateifeld, wird über den Knopf geöffnet -->
+        <input type="file" id="e-import-datei" accept=".json,application/json" hidden>
+      </div>
     </section>
   </main>
 
@@ -898,8 +936,11 @@
       Klausuren
     </a>
     <a href="#einstellungen" data-tab="einstellungen">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      Lernzeit
+      <span class="tab-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        <span class="tab-punkt" id="tab-backup-punkt" hidden title="Backup ist länger als 7 Tage her"></span>
+      </span>
+      Einstellungen
     </a>
   </nav>
 
@@ -1416,6 +1457,7 @@
       const tab = a.name === "detail" ? "klausuren" : a.name;
       document.querySelectorAll(".tabs a").forEach(link =>
         link.classList.toggle("aktiv", link.dataset.tab === tab));
+      document.getElementById("tab-backup-punkt").hidden = !backupUeberfaellig();
 
       if (a.name === "heute") heuteAnzeigen();
       else if (a.name === "klausuren") startseiteAnzeigen();
@@ -1849,7 +1891,207 @@
       if (document.activeElement !== wiederholungInput) {
         wiederholungInput.value = einstellungen.wiederholungsTage;
       }
+      backupStatusAnzeigen();
     }
+
+    // Kurze Rückmeldung oben in den Einstellungen
+    let eMeldungTimer;
+    function einstellungsMeldung(text) {
+      const el = document.getElementById("e-meldung");
+      el.textContent = text;
+      el.hidden = false;
+      window.scrollTo(0, 0);
+      clearTimeout(eMeldungTimer);
+      eMeldungTimer = setTimeout(() => { el.hidden = true; }, 8000);
+    }
+
+    // =====================================================================
+    // 9b. Backup exportieren und wiederherstellen
+    // =====================================================================
+    const LETZTES_BACKUP_SCHLUESSEL = "klausur-countdown.letztesBackup";
+    const BACKUP_ERINNERUNG_TAGE = 7;
+    const BACKUP_VERSION = 1;
+
+    function letztesBackup() {
+      const wert = ladeJSON(LETZTES_BACKUP_SCHLUESSEL);
+      const d = wert ? new Date(wert) : null;
+      return d && !isNaN(d) ? d : null;
+    }
+
+    // Wie viele Kalendertage ist das letzte Backup her? (null = noch nie)
+    function tageSeitBackup() {
+      const d = letztesBackup();
+      if (!d) return null;
+      const tag = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return Math.round((heuteUmMitternacht() - tag) / (1000 * 60 * 60 * 24));
+    }
+
+    // Erinnern, wenn es Daten gibt und das letzte Backup länger als 7 Tage her ist
+    function backupUeberfaellig() {
+      if (klausuren.length === 0) return false;
+      const tage = tageSeitBackup();
+      return tage === null || tage > BACKUP_ERINNERUNG_TAGE;
+    }
+
+    function backupStatusAnzeigen() {
+      const el = document.getElementById("e-backup-status");
+      const d = letztesBackup();
+      const tage = tageSeitBackup();
+      let text;
+      if (!d) text = "Du hast noch kein Backup erstellt.";
+      else if (tage === 0) text = "Letztes Backup: heute, " +
+        d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
+      else if (tage === 1) text = "Letztes Backup: gestern";
+      else text = `Letztes Backup: vor ${tage} Tagen (${d.toLocaleDateString("de-DE")})`;
+      if (d && backupUeberfaellig()) text += " – Zeit für ein neues Backup";
+      el.textContent = text;
+      el.classList.toggle("alt", backupUeberfaellig());
+    }
+
+    // Alles, was gesichert wird
+    function backupDaten() {
+      return {
+        app: "klausur-countdown",
+        version: BACKUP_VERSION,
+        exportiertAm: new Date().toISOString(),
+        klausuren,
+        einstellungen,
+        planstand: ladeJSON(PLANSTAND_SCHLUESSEL),
+      };
+    }
+
+    function backupErledigt() {
+      speichereJSON(LETZTES_BACKUP_SCHLUESSEL, new Date().toISOString());
+      anzeigen();
+    }
+
+    // Klassischer Download (Computer; auf dem iPad landet die Datei im Ordner "Downloads")
+    function herunterladen(datei) {
+      const url = URL.createObjectURL(datei);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = datei.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    document.getElementById("e-export").addEventListener("click", async () => {
+      const name = "lernapp-backup-" + tagSchluessel(new Date()) + ".json";
+      const datei = new File([JSON.stringify(backupDaten(), null, 2)], name, { type: "application/json" });
+
+      // iPad/iPhone: Teilen-Menü öffnen, dort "In Dateien sichern" wählen
+      const touchGeraet = navigator.maxTouchPoints > 0;
+      if (touchGeraet && navigator.canShare && navigator.canShare({ files: [datei] })) {
+        try {
+          await navigator.share({ files: [datei], title: name });
+          backupErledigt();
+          einstellungsMeldung("✓ Backup erstellt: " + name);
+        } catch (e) {
+          // Teilen-Menü einfach geschlossen -> nichts tun
+          if (e.name === "AbortError") return;
+          // Teilen ging nicht -> stattdessen herunterladen
+          herunterladen(datei);
+          backupErledigt();
+          einstellungsMeldung("✓ Backup heruntergeladen: " + name);
+        }
+        return;
+      }
+
+      herunterladen(datei);
+      backupErledigt();
+      einstellungsMeldung("✓ Backup heruntergeladen: " + name);
+    });
+
+    // "1 Thema", "5 Themen"
+    function anzahl(n, einzahl, mehrzahl) {
+      return n + " " + (n === 1 ? einzahl : mehrzahl);
+    }
+
+    // Prüft eine Backup-Datei gründlich, bevor irgendetwas überschrieben wird
+    function backupPruefen(daten) {
+      if (!daten || typeof daten !== "object" || !Array.isArray(daten.klausuren)) {
+        throw new Error("Das ist keine Backup-Datei dieser App.");
+      }
+      if (Number(daten.version) > BACKUP_VERSION) {
+        throw new Error("Dieses Backup stammt aus einer neueren Version der App.");
+      }
+
+      const klausurenNeu = daten.klausuren.map((k, i) => {
+        if (!k || typeof k.name !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(k.datum)) {
+          throw new Error(`Klausur Nr. ${i + 1} im Backup ist unvollständig.`);
+        }
+        const v = vervollstaendigen(k);
+        v.themen = v.themen
+          .filter(t => t && typeof t.titel === "string" && t.titel.trim())
+          .map(t => ({ ...t, id: t.id || neueId(), erledigt: !!t.erledigt }));
+        return v;
+      });
+
+      // Einstellungen: ungültige Werte durch Standardwerte ersetzen
+      const e = daten.einstellungen || {};
+      const minutenProTag = {};
+      for (let nr = 0; nr <= 6; nr++) {
+        const m = Math.round(Number(e.minutenProTag && e.minutenProTag[nr]));
+        minutenProTag[nr] = m >= 0 && m <= 720 ? m : STANDARD_EINSTELLUNGEN.minutenProTag[nr];
+      }
+      const w = e.wiederholungsTage;
+      const wiederholungsTage = Number.isInteger(w) && w >= 0 && w <= 14
+        ? w : STANDARD_EINSTELLUNGEN.wiederholungsTage;
+
+      const exportiertAm = new Date(daten.exportiertAm);
+
+      return {
+        klausuren: klausurenNeu,
+        einstellungen: { minutenProTag, wiederholungsTage },
+        planstand: daten.planstand && typeof daten.planstand === "object" ? daten.planstand : null,
+        exportiertAm: isNaN(exportiertAm) ? null : exportiertAm,
+      };
+    }
+
+    const importDatei = document.getElementById("e-import-datei");
+
+    document.getElementById("e-import").addEventListener("click", () => {
+      importDatei.value = "";   // damit dieselbe Datei erneut gewählt werden kann
+      importDatei.click();      // öffnet auf dem iPad die Dateien-App
+    });
+
+    importDatei.addEventListener("change", async () => {
+      const datei = importDatei.files[0];
+      importDatei.value = "";   // zurücksetzen, damit auch dieselbe Datei erneut gewählt werden kann
+      if (!datei) return;
+
+      let backup;
+      try {
+        backup = backupPruefen(JSON.parse(await datei.text()));
+      } catch (e) {
+        einstellungsMeldung("⚠️ Import nicht möglich: " +
+          (e instanceof SyntaxError ? "Die Datei ist keine gültige JSON-Datei." : e.message));
+        return;
+      }
+
+      const anzahlThemen = backup.klausuren.reduce((s, k) => s + k.themen.length, 0);
+      const vom = backup.exportiertAm ? " vom " + backup.exportiertAm.toLocaleDateString("de-DE") : "";
+
+      fragen("Backup wiederherstellen?",
+        `Backup${vom} mit ${anzahl(backup.klausuren.length, "Klausur", "Klausuren")} und ` +
+        `${anzahl(anzahlThemen, "Thema", "Themen")} einlesen? ` +
+        "Alle aktuellen Daten auf diesem Gerät werden dabei überschrieben.",
+        () => {
+          klausuren = backup.klausuren;
+          einstellungen = backup.einstellungen;
+          speichern();
+          einstellungenSpeichern();
+          if (backup.planstand) speichereJSON(PLANSTAND_SCHLUESSEL, backup.planstand);
+          else try { localStorage.removeItem(PLANSTAND_SCHLUESSEL); } catch (e) {}
+          anzeigen();
+          einstellungsMeldung("✓ Backup wiederhergestellt: " +
+            anzahl(backup.klausuren.length, "Klausur", "Klausuren") + ", " +
+            anzahl(anzahlThemen, "Thema", "Themen") + ".");
+        },
+        "Ja, wiederherstellen");
+    });
 
     // =====================================================================
     // 10. Dialog: Klausur hinzufügen und bearbeiten
@@ -2083,9 +2325,10 @@
     const frageDialog = document.getElementById("frage-dialog");
     let frageAktion = null;
 
-    function fragen(titel, text, aktion) {
+    function fragen(titel, text, aktion, jaText = "Ja, löschen") {
       document.getElementById("frage-titel").textContent = titel;
       document.getElementById("frage-text").textContent = text;
+      document.getElementById("frage-ja").textContent = jaText;
       frageAktion = aktion;
       frageDialog.showModal();
     }
