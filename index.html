@@ -128,19 +128,6 @@
     .tabs a.aktiv { color: var(--akzent); }
     .tabs a:active { background: var(--hintergrund); }
 
-    .tab-icon { position: relative; display: flex; }
-    /* kleiner Punkt am Einstellungen-Tab als dezente Backup-Erinnerung */
-    .tab-punkt {
-      position: absolute;
-      top: -2px;
-      right: -4px;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warnung);
-      border: 2px solid var(--karte);
-    }
-
     .tabs svg {
       width: 26px;
       height: 26px;
@@ -484,7 +471,6 @@
 
     .backup-karte .hinweis { margin: 0 0 16px; }
     .backup-status { margin: 0 0 8px; font-size: 1.1rem; font-weight: 600; }
-    .backup-status.alt { color: var(--warnung); }
 
     .summe { margin: 0 0 24px; color: var(--text-leise); font-size: 1.05rem; }
     .summe strong { color: var(--text); }
@@ -936,10 +922,7 @@
       Klausuren
     </a>
     <a href="#einstellungen" data-tab="einstellungen">
-      <span class="tab-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-        <span class="tab-punkt" id="tab-backup-punkt" hidden title="Backup ist länger als 7 Tage her"></span>
-      </span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
       Einstellungen
     </a>
   </nav>
@@ -1457,7 +1440,6 @@
       const tab = a.name === "detail" ? "klausuren" : a.name;
       document.querySelectorAll(".tabs a").forEach(link =>
         link.classList.toggle("aktiv", link.dataset.tab === tab));
-      document.getElementById("tab-backup-punkt").hidden = !backupUeberfaellig();
 
       if (a.name === "heute") heuteAnzeigen();
       else if (a.name === "klausuren") startseiteAnzeigen();
@@ -1909,7 +1891,6 @@
     // 9b. Backup exportieren und wiederherstellen
     // =====================================================================
     const LETZTES_BACKUP_SCHLUESSEL = "klausur-countdown.letztesBackup";
-    const BACKUP_ERINNERUNG_TAGE = 7;
     const BACKUP_VERSION = 1;
 
     function letztesBackup() {
@@ -1926,13 +1907,6 @@
       return Math.round((heuteUmMitternacht() - tag) / (1000 * 60 * 60 * 24));
     }
 
-    // Erinnern, wenn es Daten gibt und das letzte Backup länger als 7 Tage her ist
-    function backupUeberfaellig() {
-      if (klausuren.length === 0) return false;
-      const tage = tageSeitBackup();
-      return tage === null || tage > BACKUP_ERINNERUNG_TAGE;
-    }
-
     function backupStatusAnzeigen() {
       const el = document.getElementById("e-backup-status");
       const d = letztesBackup();
@@ -1943,9 +1917,7 @@
         d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
       else if (tage === 1) text = "Letztes Backup: gestern";
       else text = `Letztes Backup: vor ${tage} Tagen (${d.toLocaleDateString("de-DE")})`;
-      if (d && backupUeberfaellig()) text += " – Zeit für ein neues Backup";
       el.textContent = text;
-      el.classList.toggle("alt", backupUeberfaellig());
     }
 
     // Alles, was gesichert wird
