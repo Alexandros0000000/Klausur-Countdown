@@ -3,11 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <!-- Damit die Seite auf dem iPad-Homebildschirm wie eine App wirkt -->
+  <!-- ===== Progressive Web App: wie eine echte App auf dem Home-Bildschirm ===== -->
+  <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Klausuren">
-  <title>Mein Klausur-Countdown</title>
+  <meta name="apple-mobile-web-app-title" content="Lernplan">
+  <meta name="application-name" content="Lernplan">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f2f4f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12151c" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <title>Lernplan</title>
 
   <style>
     /* ===== Farben und Grundwerte ===== */
@@ -267,6 +278,60 @@
       border-radius: 999px;
       margin-bottom: 10px;
     }
+
+    /* Farbiger Rand links in der Farbe des Fachs */
+    .klausur, .klausur.naechste { border-left: 8px solid var(--fach, var(--rand)); }
+    .thema.plan-eintrag { box-shadow: inset 6px 0 0 var(--fach, transparent); }
+
+    .titel-punkt {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 12px;
+      vertical-align: 0.15em;
+    }
+
+    /* Farbauswahl im Klausur-Dialog */
+    .feld-titel { display: block; font-weight: 600; margin-bottom: 8px; }
+    .farbwahl { display: flex; flex-wrap: wrap; gap: 10px; }
+    .farbfeld {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 3px solid var(--karte);
+      box-shadow: 0 0 0 1px var(--rand);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 0;
+    }
+    .farbfeld[aria-checked="true"] { box-shadow: 0 0 0 3px var(--text); }
+    .farbfeld[aria-checked="true"]::after { content: "✓"; }
+    .farbfeld:active { transform: scale(0.92); }
+
+    /* ===== Update-Hinweis (neue App-Version) ===== */
+    .update-hinweis {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--tableiste) + 16px + env(safe-area-inset-bottom));
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: calc(100% - 32px);
+      padding: 10px 10px 10px 20px;
+      border-radius: 16px;
+      background: var(--text);
+      color: var(--hintergrund);
+      box-shadow: var(--schatten);
+      font-weight: 600;
+    }
+    .update-hinweis .knopf { min-height: 44px; padding: 0 16px; }
 
     /* ===== Bereits vergangene Klausuren ===== */
     .klausur.vorbei { opacity: 0.6; }
@@ -825,7 +890,7 @@
 
       <div class="detail-kopf">
         <div>
-          <h1 id="d-name"></h1>
+          <h1><span class="titel-punkt" id="d-punkt"></span><span id="d-name"></span></h1>
           <p class="datum" id="d-datum"></p>
           <div class="details">
             <span>🕘 <span id="d-uhrzeit"></span></span>
@@ -911,6 +976,12 @@
     </section>
   </main>
 
+  <!-- Hinweis, wenn eine neue Version der App bereitliegt -->
+  <div class="update-hinweis" id="update-hinweis" role="status" hidden>
+    <span>Update verfügbar</span>
+    <button type="button" class="knopf primaer" id="update-knopf">Neu laden</button>
+  </div>
+
   <!-- Tab-Leiste unten -->
   <nav class="tabs" aria-label="Ansichten">
     <a href="#heute" data-tab="heute">
@@ -954,6 +1025,11 @@
           <label for="f-raum">Raum <span class="optional">(optional)</span></label>
           <input class="eingabe" id="f-raum" type="text" autocomplete="off" placeholder="z. B. Audimax">
         </div>
+      </div>
+
+      <div class="feld">
+        <span class="feld-titel" id="f-farbe-titel">Farbe</span>
+        <div class="farbwahl" id="f-farbe" role="radiogroup" aria-labelledby="f-farbe-titel"></div>
       </div>
 
       <p class="fehler" id="fehler" role="alert"></p>
@@ -1090,8 +1166,19 @@
     const STANDARD_MINUTEN = { 1: 30, 2: 45, 3: 60 };
     const STANDARD_MINUTEN_OHNE = 45;
 
-    // Farben, um die Fächer im Lernplan zu unterscheiden
-    const FACH_FARBEN = ["#4f46e5", "#0891b2", "#d97706", "#db2777", "#16a34a", "#7c3aed", "#dc2626"];
+    // Farben, die man für ein Fach auswählen kann
+    const FACH_FARBEN = [
+      { farbe: "#4f46e5", name: "Indigo" },
+      { farbe: "#7c3aed", name: "Violett" },
+      { farbe: "#db2777", name: "Pink" },
+      { farbe: "#dc2626", name: "Rot" },
+      { farbe: "#ea580c", name: "Orange" },
+      { farbe: "#ca8a04", name: "Gold" },
+      { farbe: "#16a34a", name: "Grün" },
+      { farbe: "#0d9488", name: "Türkis" },
+      { farbe: "#0284c7", name: "Blau" },
+      { farbe: "#64748b", name: "Grau" },
+    ];
 
     // =====================================================================
     // 2. Laden und Speichern
@@ -1129,15 +1216,37 @@
         datum: k.datum,
         uhrzeit: k.uhrzeit || "",
         raum: k.raum || "",
+        farbe: /^#[0-9a-f]{6}$/i.test(k.farbe || "") ? k.farbe : null,
         themen: Array.isArray(k.themen) ? k.themen : [],
       };
     }
 
+    // Klausuren ohne Farbe bekommen eine – möglichst eine, die noch frei ist.
+    function farbenErgaenzen(liste) {
+      const sortiert = [...liste].sort((a, b) => a.datum.localeCompare(b.datum));
+      sortiert.forEach(k => { if (!k.farbe) k.farbe = freieFarbe(liste); });
+      return liste;
+    }
+
+    function freieFarbe(liste) {
+      const benutzt = liste.map(k => k.farbe);
+      const frei = FACH_FARBEN.find(f => !benutzt.includes(f.farbe));
+      return (frei || FACH_FARBEN[liste.length % FACH_FARBEN.length]).farbe;
+    }
+
     function laden() {
       const daten = ladeJSON(SPEICHER_SCHLUESSEL);
-      if (Array.isArray(daten)) return daten.map(vervollstaendigen);
+      if (Array.isArray(daten)) {
+        const liste = daten.map(vervollstaendigen);
+        // ältere Daten ohne Farben einmalig ergänzen und speichern
+        if (liste.some(k => !k.farbe)) {
+          farbenErgaenzen(liste);
+          speichereJSON(SPEICHER_SCHLUESSEL, liste);
+        }
+        return liste;
+      }
       // Erster Start: Startdaten übernehmen und gleich speichern.
-      const start = STARTDATEN.map(vervollstaendigen);
+      const start = farbenErgaenzen(STARTDATEN.map(vervollstaendigen));
       speichereJSON(SPEICHER_SCHLUESSEL, start);
       return start;
     }
@@ -1244,10 +1353,9 @@
       return s;
     }
 
-    // Jede Klausur bekommt eine feste Farbe (nach Datum sortiert)
+    // Die Farbe eines Fachs (in "Klausur bearbeiten" auswählbar)
     function farbeVon(k) {
-      const sortiert = [...klausuren].sort((a, b) => a.datum.localeCompare(b.datum));
-      return FACH_FARBEN[sortiert.indexOf(k) % FACH_FARBEN.length];
+      return k.farbe || FACH_FARBEN[0].farbe;
     }
 
     // =====================================================================
@@ -1524,7 +1632,8 @@
 
       eintraege.forEach(e => {
         const li = document.createElement("li");
-        li.className = "thema" + (e.erledigt ? " erledigt" : "");
+        li.className = "thema plan-eintrag" + (e.erledigt ? " erledigt" : "");
+        li.style.setProperty("--fach", farbeVon(e.klausur));
         li.innerHTML = `
           <label class="thema-haken">
             <input type="checkbox">
@@ -1651,6 +1760,7 @@
 
         const li = document.createElement("li");
         li.className = "klausur";
+        li.style.setProperty("--fach", farbeVon(k));
         li.tabIndex = 0;
         li.setAttribute("role", "button");
         if (tage < 0) li.classList.add("vorbei");
@@ -1710,6 +1820,7 @@
       const cd = countdownText(tageBis(datum));
 
       document.getElementById("d-name").textContent = k.name;
+      document.getElementById("d-punkt").style.background = farbeVon(k);
       document.getElementById("d-datum").textContent = formatieren(datum);
       document.getElementById("d-uhrzeit").textContent = k.uhrzeit ? k.uhrzeit + " Uhr" : "Uhrzeit folgt";
       document.getElementById("d-raum").textContent = k.raum || "Raum folgt";
@@ -2015,7 +2126,7 @@
       const exportiertAm = new Date(daten.exportiertAm);
 
       return {
-        klausuren: klausurenNeu,
+        klausuren: farbenErgaenzen(klausurenNeu),
         einstellungen: { minutenProTag, wiederholungsTage },
         planstand: daten.planstand && typeof daten.planstand === "object" ? daten.planstand : null,
         exportiertAm: isNaN(exportiertAm) ? null : exportiertAm,
@@ -2075,6 +2186,29 @@
     const feldRaum       = document.getElementById("f-raum");
     const fehler         = document.getElementById("fehler");
 
+    // Farbauswahl: runde Farbfelder zum Antippen
+    const farbwahl = document.getElementById("f-farbe");
+    let gewaehlteFarbe = FACH_FARBEN[0].farbe;
+
+    FACH_FARBEN.forEach(f => {
+      const knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.className = "farbfeld";
+      knopf.setAttribute("role", "radio");
+      knopf.setAttribute("aria-label", f.name);
+      knopf.title = f.name;
+      knopf.dataset.farbe = f.farbe;
+      knopf.style.background = f.farbe;
+      knopf.addEventListener("click", () => farbeWaehlen(f.farbe));
+      farbwahl.appendChild(knopf);
+    });
+
+    function farbeWaehlen(farbe) {
+      gewaehlteFarbe = farbe;
+      farbwahl.querySelectorAll(".farbfeld").forEach(knopf =>
+        knopf.setAttribute("aria-checked", String(knopf.dataset.farbe === farbe)));
+    }
+
     // Welche Klausur gerade bearbeitet wird (null = neue Klausur)
     let aktuelleId = null;
 
@@ -2087,6 +2221,7 @@
       feldDatum.value   = k ? k.datum : "";
       feldUhrzeit.value = k ? k.uhrzeit : "";
       feldRaum.value    = k ? k.raum : "";
+      farbeWaehlen(k ? farbeVon(k) : freieFarbe(klausuren));
       fehler.textContent = "";
       document.getElementById("loeschen").hidden = !k;   // Löschen nur beim Bearbeiten
 
@@ -2102,7 +2237,7 @@
       if (!name)  { fehler.textContent = "Bitte gib einen Namen ein.";  feldName.focus();  return; }
       if (!datum) { fehler.textContent = "Bitte wähle ein Datum aus."; feldDatum.focus(); return; }
 
-      const daten = { name, datum, uhrzeit: feldUhrzeit.value, raum: feldRaum.value.trim() };
+      const daten = { name, datum, uhrzeit: feldUhrzeit.value, raum: feldRaum.value.trim(), farbe: gewaehlteFarbe };
       const k = findeKlausur(aktuelleId);
 
       if (k) Object.assign(k, daten);
@@ -2324,6 +2459,54 @@
         if (!drinnen) dialog.close();
       });
     });
+
+    // =====================================================================
+    // 13b. Progressive Web App: Service Worker und Update-Hinweis
+    // =====================================================================
+    // Der Service Worker (sw.js) speichert die App für die Offline-Nutzung.
+    // Gibt es eine neue Version, wartet er, bis man "Neu laden" antippt.
+    function updateHinweisZeigen(wartenderWorker) {
+      const hinweis = document.getElementById("update-hinweis");
+      hinweis.hidden = false;
+      document.getElementById("update-knopf").onclick = () => {
+        neuLadenAngefordert = true;
+        wartenderWorker.postMessage("jetzt-aktualisieren");
+      };
+    }
+
+    let neuLadenAngefordert = false;
+
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      // Sobald der neue Service Worker übernimmt: Seite einmal neu laden
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (neuLadenAngefordert) location.reload();
+      });
+
+      navigator.serviceWorker.register("sw.js").then(registrierung => {
+        // Liegt schon eine neue Version bereit?
+        if (registrierung.waiting && navigator.serviceWorker.controller) {
+          updateHinweisZeigen(registrierung.waiting);
+        }
+        // Wird gerade eine neue Version installiert?
+        registrierung.addEventListener("updatefound", () => {
+          const neu = registrierung.installing;
+          neu.addEventListener("statechange", () => {
+            // nur bei einem echten Update, nicht bei der allerersten Installation
+            if (neu.state === "installed" && navigator.serviceWorker.controller) {
+              updateHinweisZeigen(neu);
+            }
+          });
+        });
+        // Als App auf dem iPad wird die Seite selten neu geöffnet –
+        // daher beim Zurückkehren in die App und stündlich nach Updates suchen.
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") registrierung.update().catch(() => {});
+        });
+        setInterval(() => registrierung.update().catch(() => {}), 60 * 60 * 1000);
+      }).catch(() => {
+        // Ohne Service Worker funktioniert die App trotzdem, nur nicht offline.
+      });
+    }
 
     // =====================================================================
     // 14. Start

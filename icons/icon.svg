@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c75ff"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <clipPath id="karte"><rect x="120" y="132" width="272" height="260" rx="44"/></clipPath>
+  </defs>
+  <!-- Hintergrund (randlos, iOS rundet die Ecken selbst ab) -->
+  <rect width="512" height="512" fill="url(#hg)"/>
+  <!-- Kalenderblatt mit Schatten -->
+  <rect x="120" y="144" width="272" height="260" rx="44" fill="#1e1b4b" opacity="0.25"/>
+  <rect x="120" y="132" width="272" height="260" rx="44" fill="#ffffff"/>
+  <rect x="120" y="132" width="272" height="70" fill="#c7d2fe" clip-path="url(#karte)"/>
+  <!-- Ringe -->
+  <rect x="180" y="104" width="28" height="64" rx="14" fill="#ffffff" stroke="#4338ca" stroke-width="8"/>
+  <rect x="304" y="104" width="28" height="64" rx="14" fill="#ffffff" stroke="#4338ca" stroke-width="8"/>
+  <!-- Countdown-Ring -->
+  <circle cx="256" cy="298" r="60" fill="none" stroke="#e0e7ff" stroke-width="20"/>
+  <circle cx="256" cy="298" r="60" fill="none" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"
+          stroke-dasharray="283 377" transform="rotate(-90 256 298)"/>
+  <!-- Häkchen -->
+  <path d="M229 299 l18 18 l35 -38" fill="none" stroke="#4f46e5" stroke-width="18"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
